@@ -20,6 +20,7 @@ export default function DollDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [isFavorited, setIsFavorited] = useState(false)
   // 配饰选择相关状态
   const [showAccessoryModal, setShowAccessoryModal] = useState(false)
   const [allAccessories, setAllAccessories] = useState<Accessory[]>([])
@@ -43,6 +44,7 @@ export default function DollDetailPage() {
     try {
       const res = await api.doll.detail(id)
       setDoll(res.data)
+      setIsFavorited(res.data?.isFavorited || false)
       if (userInfo) {
         api.browse.add({ item_type: 'doll', item_id: id }).catch(() => {})
       }
@@ -59,10 +61,17 @@ export default function DollDetailPage() {
       return
     }
     try {
-      await api.favorites.add({ item_type: 'doll', item_id: doll.id })
-      showToast({ title: '已收藏', icon: 'success' })
+      if (isFavorited) {
+        await api.favorites.removeByItem({ item_type: 'doll', item_id: doll.id })
+        setIsFavorited(false)
+        showToast({ title: '已取消收藏', icon: 'success' })
+      } else {
+        await api.favorites.add({ item_type: 'doll', item_id: doll.id })
+        setIsFavorited(true)
+        showToast({ title: '已收藏', icon: 'success' })
+      }
     } catch (e: any) {
-      showToast({ title: e.message || '收藏失败', icon: 'none' })
+      showToast({ title: e.message || '操作失败', icon: 'none' })
     }
   }
 
@@ -266,8 +275,10 @@ export default function DollDetailPage() {
       {/* 底部操作栏 */}
       <View className="action-bar">
         <View className="action-btn" onClick={handleCollect}>
-          <Text className="action-icon">⭐</Text>
-          <Text className="action-text">收藏</Text>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavorited ? "#f59e0b" : "none"} stroke={isFavorited ? "#f59e0b" : "#9ca3af"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          <Text className={`action-text ${isFavorited ? 'text-amber-500' : ''}`}>{isFavorited ? '已收藏' : '收藏'}</Text>
         </View>
         <View className="action-btn accessory-btn" onClick={handleOpenAccessoryModal}>
           <Text className="action-text">{savedAccessories.length > 0 ? `已搭配${savedAccessories.length}个` : '搭配配饰'}</Text>

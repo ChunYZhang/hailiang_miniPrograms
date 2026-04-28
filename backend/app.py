@@ -328,6 +328,7 @@ def admin_get_doll_list():
                 doll['updatedAt'] = doll['updated_at'].strftime('%Y-%m-%d') if doll.get('updated_at') else ''
                 doll['minQuantity'] = doll.get('min_quantity', 1)
                 doll['defaultAccessory'] = doll.get('default_accessory') or ''
+                doll['isHot'] = bool(doll.get('is_hot'))
                 selected_acc = doll.get('selected_accessories')
                 if isinstance(selected_acc, str):
                     doll['selectedAccessories'] = json.loads(selected_acc) if selected_acc else []
@@ -2229,12 +2230,13 @@ def mobile_doll_list():
             total = cursor.fetchone()['total']
 
             offset = (page - 1) * page_size
-            cursor.execute(f"SELECT id, name, price, material, size, series, images FROM doll {where} ORDER BY created_at DESC LIMIT %s OFFSET %s", params + [page_size, offset])
+            cursor.execute(f"SELECT id, name, price, material, size, series, images, default_accessory FROM doll {where} ORDER BY created_at DESC LIMIT %s OFFSET %s", params + [page_size, offset])
             dolls = cursor.fetchall()
             for d in dolls:
                 if isinstance(d.get('images'), str):
                     d['images'] = json.loads(d['images']) if d['images'] else []
                 d['coverImage'] = d['images'][0] if d['images'] else ''
+                d['defaultAccessory'] = d.get('default_accessory') or ''
 
             return jsonify({"code": 200, "data": dolls, "total": total, "page": page, "page_size": page_size})
     finally:
@@ -2256,6 +2258,14 @@ def mobile_doll_detail(doll_id):
             doll['size'] = doll.get('size', '')
             doll['series'] = doll.get('series', '')
             doll['patentNo'] = doll.get('patent_no', '')
+            # 检查是否已收藏
+            user_id = get_mini_user_id()
+            if user_id:
+                cursor.execute("SELECT id FROM mini_user_favorite WHERE user_id=%s AND item_type='doll' AND item_id=%s", (user_id, doll_id))
+                fav = cursor.fetchone()
+                doll['isFavorited'] = bool(fav)
+            else:
+                doll['isFavorited'] = False
             doll['defaultAccessory'] = doll.get('default_accessory') or ''
             selected_acc = doll.get('selected_accessories')
             if isinstance(selected_acc, str):
@@ -2887,6 +2897,25 @@ def mobile_favorites_delete(fav_id):
     finally:
         db.close()
 
+@app.route('/api/mobile/favorites/by-item', methods=['DELETE'])
+@mini_login_required
+def mobile_favorites_delete_by_item():
+    """根据item_type和item_id取消收藏"""
+    # 尝试从 body 或 query 获取参数
+    data = request.get_json(force=True) or {}
+    item_type = data.get('item_type') or request.args.get('item_type')
+    item_id = data.get('item_id') or request.args.get('item_id')
+    if not item_type or not item_id:
+        return jsonify({"code": 400, "msg": "item_type和item_id不能为空"})
+    db = get_db()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM mini_user_favorite WHERE user_id=%s AND item_type=%s AND item_id=%s", (get_mini_user_id(), item_type, item_id))
+            db.commit()
+            return jsonify({"code": 200, "msg": "已取消收藏"})
+    finally:
+        db.close()
+
 # ---- 用户购物车 ----
 
 @app.route('/api/mobile/cart', methods=['GET'])
@@ -2904,7 +2933,7 @@ def mobile_cart_list():
                 cursor.execute("""
                     SELECT c.id, c.item_type, c.item_id, c.quantity, c.accessories, c.created_at,
                         c.pindan_group_id, c.pindan_group_name,
-                        d.name as doll_name, d.price as doll_price, d.images as doll_images,
+                        d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
                         a.name as acc_name, a.price as acc_price, a.images as acc_images,
                         o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image, o.accessories as outfit_default_accessories
                     FROM mini_cart c
@@ -2921,7 +2950,7 @@ def mobile_cart_list():
                 try:
                     cursor.execute("""
                         SELECT c.id, c.item_type, c.item_id, c.quantity, c.accessories, c.created_at,
-                            d.name as doll_name, d.price as doll_price, d.images as doll_images,
+                            d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
                             a.name as acc_name, a.price as acc_price, a.images as acc_images,
                             o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image, o.accessories as outfit_default_accessories
                         FROM mini_cart c
@@ -2937,7 +2966,7 @@ def mobile_cart_list():
                     # 最后的fallback
                     cursor.execute("""
                         SELECT c.id, c.item_type, c.item_id, c.quantity, c.created_at,
-                            d.name as doll_name, d.price as doll_price, d.images as doll_images,
+                            d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
                             a.name as acc_name, a.price as acc_price, a.images as acc_images,
                             o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image
                         FROM mini_cart c
@@ -2975,6 +3004,7 @@ def mobile_cart_list():
                     item['name'] = r['doll_name']
                     item['price'] = float(r['doll_price'] or 0)
                     item['coverImage'] = imgs[0] if imgs else ''
+                    item['defaultAccessory'] = r.get('doll_default_accessory') or ''
                 elif r['item_type'] == 'accessory':
                     imgs = json.loads(r['acc_images']) if isinstance(r['acc_images'], str) else (r['acc_images'] or [])
                     item['name'] = r['acc_name']

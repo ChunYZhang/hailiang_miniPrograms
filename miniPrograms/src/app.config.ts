@@ -34,7 +34,7 @@ export default {
     list: [
       { pagePath: 'pages/home/index', text: '首页' },
       { pagePath: 'pages/doll-list/index', text: '娃娃' },
-      { pagePath: 'pages/outfit-list/index', text: '搭配' },
+      { pagePath: 'pages/company/index', text: '企业' },
       { pagePath: 'pages/cart/index', text: '购物车' },
       { pagePath: 'pages/profile/index', text: '我的' },
     ],

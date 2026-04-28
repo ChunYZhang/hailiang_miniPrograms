@@ -72,7 +72,10 @@
       "Bash(echo \"PID: $!\" sleep 3 curl -s http://127.0.0.1:3842/api/dashboard/stats)",
       "Bash(kill 62514)",
       "Bash(echo \"Started PID: $!\" sleep 3 curl -s http://127.0.0.1:5001/api/dashboard/stats)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

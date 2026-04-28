@@ -220,11 +220,25 @@ export default function DollsPage() {
                         <Edit size={14} />
                       </button>
                       <button
-                        onClick={() => toggleHot(doll.id)}
+                        onClick={() => {
+                          console.log('点击星星, id:', doll.id, '当前isHot:', doll.isHot);
+                          toggleHot(doll.id);
+                        }}
                         className={`p-1.5 rounded transition-colors ${doll.isHot ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-amber-500'}`}
                         title={doll.isHot ? '取消热门' : '设为热门'}
                       >
-                        <Star size={14} fill={doll.isHot ? '#f59e0b' : 'none'} />
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill={doll.isHot ? "#f59e0b" : "none"}
+                          stroke={doll.isHot ? "#f59e0b" : "currentColor"}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
                       </button>
                       <button
                         onClick={() => toggleStatus(doll.id)}

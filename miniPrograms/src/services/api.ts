@@ -67,8 +67,8 @@ async function post<T = any>(path: string, data?: any): Promise<T> {
   return request<T>(path, { method: 'POST', body: data })
 }
 
-async function del<T = any>(path: string): Promise<T> {
-  return request<T>(path, { method: 'DELETE' })
+async function del<T = any>(path: string, body?: any): Promise<T> {
+  return request<T>(path, { method: 'DELETE', body })
 }
 
 export const api = {
@@ -139,6 +139,7 @@ export const api = {
     list: () => get<any[]>('/api/mobile/favorites'),
     add: (data: { item_type: string; item_id: string }) => post('/api/mobile/favorites', data),
     remove: (id: string) => del(`/api/mobile/favorites/${id}`),
+    removeByItem: (data: { item_type: string; item_id: string }) => del('/api/mobile/favorites/by-item', data),
   },
   // 购物车
   cart: {

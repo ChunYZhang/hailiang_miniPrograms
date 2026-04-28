@@ -53,6 +53,7 @@ export default function CartPage() {
     setLoading(true)
     try {
       const res = await api.cart.list()
+      console.log('[CART] 返回数据:', JSON.stringify(res.data, null, 2))
       setCartItems(res.data || [])
       setSelectedIds((res.data || []).map((item: any) => item.id))
     } catch (e) {
@@ -62,10 +63,21 @@ export default function CartPage() {
     }
   }
 
-  const loadAllAccessories = async () => {
+  const loadAllAccessories = async (itemType: string, itemId: string) => {
     try {
-      const res = await api.accessory.list({ page_size: 100 })
-      setAllAccessories(res.data || [])
+      if (itemType === 'doll') {
+        // 娃娃：优先加载搭配方案配饰，如果没有则加载全部
+        const outfitRes = await api.doll.outfitAccessories(itemId)
+        if (outfitRes.data && outfitRes.data.length > 0) {
+          setAllAccessories(outfitRes.data)
+        } else {
+          const res = await api.accessory.list({ page_size: 100 })
+          setAllAccessories(res.data || [])
+        }
+      } else {
+        const res = await api.accessory.list({ page_size: 100 })
+        setAllAccessories(res.data || [])
+      }
     } catch (e) {
       console.error('加载配饰失败', e)
     }
@@ -134,7 +146,7 @@ export default function CartPage() {
   const handleEditAccessories = async (item: CartItem) => {
     setEditingItem(item)
     setSelectedAccessoryIds(item.accessories?.map(acc => acc.id) || [])
-    await loadAllAccessories()
+    await loadAllAccessories(item.item_type, item.item_id)
     setShowAccessoryModal(true)
   }
 
@@ -181,7 +193,7 @@ export default function CartPage() {
       return sum + price
     }, 0)
 
-  const typeLabel: Record<string, string> = { doll: '娃娃', accessory: '配饰', outfit: '' }
+  const typeLabel: Record<string, string> = { doll: '', accessory: '配饰', outfit: '' }
 
   // 按拼单组分组
   const groupedCartItems = (() => {
@@ -255,9 +267,11 @@ export default function CartPage() {
                         <View className="item-content">
                           <Text className="item-name">{item.name}</Text>
                           <View className="item-tags">
-                            {typeLabel[item.item_type] && <Text className="item-tag">{typeLabel[item.item_type]}</Text>}
+                            {item.item_type === 'outfit' && item.defaultAccessories && item.defaultAccessories.length > 0 && (
+                              <Text className="item-tag">默认配饰</Text>
+                            )}
                           </View>
-                          {/* 搭配方案：显示默认配饰（默认配饰）+ 用户选择配饰（配饰） */}
+                          {/* 搭配方案：显示默认配饰 + 用户选择配饰 */}
                           {item.item_type === 'outfit' && item.defaultAccessories && item.defaultAccessories.length > 0 && (
                             <View className="item-accessories-row">
                               <Text className="item-accessories-label">默认配饰</Text>
@@ -269,8 +283,19 @@ export default function CartPage() {
                               </View>
                             </View>
                           )}
+                          {/* 娃娃类型：显示默认配饰文本 */}
+                          {item.item_type === 'doll' && item.defaultAccessory && (
+                            <View className="item-accessories-row">
+                              <Text className="item-accessories-label">默认配饰</Text>
+                              <View className="item-accessories-content">
+                                <Text className="item-accessories-text">
+                                  {item.defaultAccessory}
+                                </Text>
+                              </View>
+                            </View>
+                          )}
                           <View className="item-accessories-row">
-                            <Text className="item-accessories-label">配饰</Text>
+                            <Text className="item-accessories-label">搭配配饰</Text>
                             <View className="item-accessories-content">
                               {item.accessories && item.accessories.length > 0 ? (
                                 <Text
@@ -327,9 +352,11 @@ export default function CartPage() {
                         <View className="item-content">
                           <Text className="item-name">{item.name}</Text>
                           <View className="item-tags">
-                            {typeLabel[item.item_type] && <Text className="item-tag">{typeLabel[item.item_type]}</Text>}
+                            {item.item_type === 'outfit' && item.defaultAccessories && item.defaultAccessories.length > 0 && (
+                              <Text className="item-tag">默认配饰</Text>
+                            )}
                           </View>
-                          {/* 搭配方案：显示默认配饰（默认配饰）+ 用户选择配饰（配饰） */}
+                          {/* 搭配方案：显示默认配饰 + 用户选择配饰 */}
                           {item.item_type === 'outfit' && item.defaultAccessories && item.defaultAccessories.length > 0 && (
                             <View className="item-accessories-row">
                               <Text className="item-accessories-label">默认配饰</Text>
@@ -341,8 +368,19 @@ export default function CartPage() {
                               </View>
                             </View>
                           )}
+                          {/* 娃娃类型：显示默认配饰文本 */}
+                          {item.item_type === 'doll' && item.defaultAccessory && (
+                            <View className="item-accessories-row">
+                              <Text className="item-accessories-label">默认配饰</Text>
+                              <View className="item-accessories-content">
+                                <Text className="item-accessories-text">
+                                  {item.defaultAccessory}
+                                </Text>
+                              </View>
+                            </View>
+                          )}
                           <View className="item-accessories-row">
-                            <Text className="item-accessories-label">配饰</Text>
+                            <Text className="item-accessories-label">搭配配饰</Text>
                             <View className="item-accessories-content">
                               {item.accessories && item.accessories.length > 0 ? (
                                 <Text

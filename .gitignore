@@ -20,6 +20,7 @@ node_modules/
 miniPrograms/node_modules/
 miniPrograms/.hbuilderx/
 miniPrograms/unpackage/
+miniPrograms/.swc/
 
 # Frontend
 frontend/node_modules/
@@ -29,6 +30,7 @@ frontend/.env.local
 # Backend
 backend/venv/
 backend/.env
+backend/uploads/
 
 # Custom
 nimiKey.txt
