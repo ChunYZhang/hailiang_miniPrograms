@@ -2948,6 +2948,7 @@ def mobile_cart_list():
                     SELECT c.id, c.item_type, c.item_id, c.quantity, c.accessories, c.created_at,
                         c.pindan_group_id, c.pindan_group_name, c.box_size,
                         d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
+                        d.min_quantity as doll_min_quantity, d.small_box_capacity, d.medium_box_capacity, d.large_box_capacity,
                         a.name as acc_name, a.price as acc_price, a.images as acc_images,
                         o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image, o.accessories as outfit_default_accessories
                     FROM mini_cart c
@@ -2965,6 +2966,7 @@ def mobile_cart_list():
                     cursor.execute("""
                         SELECT c.id, c.item_type, c.item_id, c.quantity, c.accessories, c.created_at,
                             d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
+                            d.min_quantity as doll_min_quantity, d.small_box_capacity, d.medium_box_capacity, d.large_box_capacity,
                             a.name as acc_name, a.price as acc_price, a.images as acc_images,
                             o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image, o.accessories as outfit_default_accessories
                         FROM mini_cart c
@@ -2981,6 +2983,7 @@ def mobile_cart_list():
                     cursor.execute("""
                         SELECT c.id, c.item_type, c.item_id, c.quantity, c.created_at,
                             d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
+                            d.min_quantity as doll_min_quantity, d.small_box_capacity, d.medium_box_capacity, d.large_box_capacity,
                             a.name as acc_name, a.price as acc_price, a.images as acc_images,
                             o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image
                         FROM mini_cart c
@@ -3020,6 +3023,10 @@ def mobile_cart_list():
                     item['price'] = float(r['doll_price'] or 0)
                     item['coverImage'] = imgs[0] if imgs else ''
                     item['defaultAccessory'] = r.get('doll_default_accessory') or ''
+                    item['minQuantity'] = r.get('doll_min_quantity') or 1
+                    item['smallBoxCapacity'] = r.get('small_box_capacity') or 0
+                    item['mediumBoxCapacity'] = r.get('medium_box_capacity') or 0
+                    item['largeBoxCapacity'] = r.get('large_box_capacity') or 0
                 elif r['item_type'] == 'accessory':
                     imgs = json.loads(r['acc_images']) if isinstance(r['acc_images'], str) else (r['acc_images'] or [])
                     item['name'] = r['acc_name']
@@ -3193,24 +3200,40 @@ def mobile_inquiry_submit():
                 total_amount = 0
                 enriched_items = []
                 for item in group_data['items']:
+                    qty = item.get('quantity', 1)
                     if item.get('item_type') == 'doll':
                         cursor.execute("SELECT name, price FROM doll WHERE id=%s", (item['item_id'],))
                         d = cursor.fetchone()
                         if d:
-                            total_amount += float(d['price'] or 0)
-                            enriched_items.append({'type': 'doll', 'id': item['item_id'], 'name': d['name'], 'price': float(d['price'] or 0)})
+                            doll_price = float(d['price'] or 0)
+                            accessories = item.get('accessories', []) or []
+                            acc_total = sum(float(acc.get('price') or 0) for acc in accessories)
+                            item_price = (doll_price + acc_total) * qty
+                            total_amount += item_price
+                            enriched_items.append({
+                                'type': 'doll',
+                                'id': item['item_id'],
+                                'name': d['name'],
+                                'price': doll_price + acc_total,
+                                'quantity': qty,
+                                'boxSize': item.get('boxSize', ''),
+                                'defaultAccessory': item.get('defaultAccessory', ''),
+                                'accessories': accessories
+                            })
                     elif item.get('item_type') == 'accessory':
                         cursor.execute("SELECT name, price FROM accessory WHERE id=%s", (item['item_id'],))
                         a = cursor.fetchone()
                         if a:
-                            total_amount += float(a['price'] or 0)
-                            enriched_items.append({'type': 'accessory', 'id': item['item_id'], 'name': a['name'], 'price': float(a['price'] or 0)})
+                            item_price = float(a['price'] or 0) * qty
+                            total_amount += item_price
+                            enriched_items.append({'type': 'accessory', 'id': item['item_id'], 'name': a['name'], 'price': float(a['price'] or 0), 'quantity': qty})
                     elif item.get('item_type') == 'outfit':
                         print(f"[INQUIRY SUBMIT] Processing outfit item: item_id={item.get('item_id')}, accessories={item.get('accessories')}", flush=True)
                         cursor.execute("SELECT name, doll_id, doll_name, accessories, total_price FROM outfit_template WHERE id=%s", (item['item_id'],))
                         o = cursor.fetchone()
                         if o:
-                            total_amount += float(o['total_price'] or 0)
+                            item_price = float(o['total_price'] or 0) * qty
+                            total_amount += item_price
                             # 用户自定义配饰
                             user_accessories = item.get('accessories', [])
                             # 方案默认配饰
@@ -3223,6 +3246,7 @@ def mobile_inquiry_submit():
                                 'id': item['item_id'],
                                 'name': o['name'],
                                 'price': float(o['total_price'] or 0),
+                                'quantity': qty,
                                 'dollId': o['doll_id'],
                                 'dollName': o['doll_name'],
                                 'accessories': user_accessories or [],
@@ -3231,12 +3255,12 @@ def mobile_inquiry_submit():
 
                 order_id = generate_uuid()
                 order_no = generate_order_no()
-                # 存储拼单组信息在remark中（格式：拼单名称）
-                group_remark = group_data['name']
+                # 合并用户备注和拼单组名称
+                final_remark = f"{group_data['name']}；{remark}" if remark else group_data['name']
                 cursor.execute("""
                     INSERT INTO inquiry_order (id, order_no, user_id, user_name, user_phone, address, items, total_amount, remark, status, is_pindan)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', 1)
-                """, (order_id, order_no, get_mini_user_id(), user_name, user_phone, address, json.dumps(enriched_items, ensure_ascii=False), total_amount, group_remark))
+                """, (order_id, order_no, get_mini_user_id(), user_name, user_phone, address, json.dumps(enriched_items, ensure_ascii=False), total_amount, final_remark))
                 order_nos.append(order_no)
 
             # 处理普通商品 - 归为一个订单
@@ -3244,24 +3268,40 @@ def mobile_inquiry_submit():
                 total_amount = 0
                 enriched_items = []
                 for item in normal_items:
+                    qty = item.get('quantity', 1)
                     if item.get('item_type') == 'doll':
                         cursor.execute("SELECT name, price FROM doll WHERE id=%s", (item['item_id'],))
                         d = cursor.fetchone()
                         if d:
-                            total_amount += float(d['price'] or 0)
-                            enriched_items.append({'type': 'doll', 'id': item['item_id'], 'name': d['name'], 'price': float(d['price'] or 0)})
+                            doll_price = float(d['price'] or 0)
+                            accessories = item.get('accessories', []) or []
+                            acc_total = sum(float(acc.get('price') or 0) for acc in accessories)
+                            item_price = (doll_price + acc_total) * qty
+                            total_amount += item_price
+                            enriched_items.append({
+                                'type': 'doll',
+                                'id': item['item_id'],
+                                'name': d['name'],
+                                'price': doll_price,
+                                'quantity': qty,
+                                'boxSize': item.get('boxSize', ''),
+                                'defaultAccessory': item.get('defaultAccessory', ''),
+                                'accessories': accessories
+                            })
                     elif item.get('item_type') == 'accessory':
                         cursor.execute("SELECT name, price FROM accessory WHERE id=%s", (item['item_id'],))
                         a = cursor.fetchone()
                         if a:
-                            total_amount += float(a['price'] or 0)
-                            enriched_items.append({'type': 'accessory', 'id': item['item_id'], 'name': a['name'], 'price': float(a['price'] or 0)})
+                            item_price = float(a['price'] or 0) * qty
+                            total_amount += item_price
+                            enriched_items.append({'type': 'accessory', 'id': item['item_id'], 'name': a['name'], 'price': float(a['price'] or 0), 'quantity': qty})
                     elif item.get('item_type') == 'outfit':
                         print(f"[INQUIRY SUBMIT] Processing outfit item: item_id={item.get('item_id')}, accessories={item.get('accessories')}", flush=True)
                         cursor.execute("SELECT name, doll_id, doll_name, accessories, total_price FROM outfit_template WHERE id=%s", (item['item_id'],))
                         o = cursor.fetchone()
                         if o:
-                            total_amount += float(o['total_price'] or 0)
+                            item_price = float(o['total_price'] or 0) * qty
+                            total_amount += item_price
                             # 用户自定义配饰
                             user_accessories = item.get('accessories', [])
                             # 方案默认配饰
@@ -3274,6 +3314,7 @@ def mobile_inquiry_submit():
                                 'id': item['item_id'],
                                 'name': o['name'],
                                 'price': float(o['total_price'] or 0),
+                                'quantity': qty,
                                 'dollId': o['doll_id'],
                                 'dollName': o['doll_name'],
                                 'accessories': user_accessories or [],

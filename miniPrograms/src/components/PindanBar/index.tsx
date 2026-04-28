@@ -60,7 +60,7 @@ export default function PindanBar() {
   const boxCapacity = getBoxCapacity()
   const remainingCapacity = boxCapacity - totalQuantityAll
   const allMinQuantity = pindanItems.every(item => (Number(item.quantity) || 0) >= (Number(item.minQuantity) || 0))
-  const canCompletePindan = pindanItems.length > 0 && allMinQuantity && remainingCapacity >= 0
+  const canCompletePindan = pindanItems.length > 0 && allMinQuantity && remainingCapacity <= 0
 
   console.log('[PindanBar] DEBUG:', JSON.stringify(pindanItems.map(i => ({
     name: i.name,
@@ -168,7 +168,12 @@ export default function PindanBar() {
             {/* 拼单容量提示 */}
             <View className="pindan-tip-bar">
               <Text className="pindan-bar-tip-text">
-                {boxSizeLabel} 可装约{boxCapacity}个娃娃{remainingCapacity > 0 ? `，还差${remainingCapacity}个` : '（已满）'}
+                {boxSizeLabel} 可装约{boxCapacity}个娃娃
+                {remainingCapacity > 0
+                  ? `，还差${remainingCapacity}个`
+                  : remainingCapacity === 0
+                    ? '（已满）'
+                    : `（已超出${Math.abs(remainingCapacity)}个）`}
               </Text>
             </View>
             <ScrollView scrollX className="pindan-bar-content">

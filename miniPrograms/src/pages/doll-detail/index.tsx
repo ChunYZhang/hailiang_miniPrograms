@@ -53,13 +53,6 @@ export default function DollDetailPage() {
     return '大箱'
   }
 
-  useEffect(() => {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    const id = (page as any).options?.id
-    if (id) loadDetail(id)
-  }, [])
-
   const loadDetail = async (id: string) => {
     setLoading(true)
     // 重置配饰选择状态，每次进入都重新选择

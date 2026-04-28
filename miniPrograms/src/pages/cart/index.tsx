@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-import { showToast, showModal, useDidShow, navigateTo } from '@tarojs/taro'
+import { View, Text, Image, ScrollView, Input } from '@tarojs/components'
+import Taro, { showToast, showModal, useDidShow, navigateTo } from '@tarojs/taro'
 import { api } from '../../services/api'
 import { useGlobalState } from '../../store'
 import './index.scss'
@@ -20,7 +20,11 @@ interface CartItem {
   price: number
   coverImage: string
   quantity: number
-  min_quantity?: number
+  minQuantity?: number
+  smallBoxCapacity?: number
+  mediumBoxCapacity?: number
+  largeBoxCapacity?: number
+  boxSize?: string
   accessories: Accessory[]
   pindan_group_id?: string
   pindan_group_name?: string
@@ -143,6 +147,68 @@ export default function CartPage() {
       return
     }
 
+    // 校验拼单组：检查起购数量和生成备注
+    const pindanGroups: Record<string, typeof cartItems> = {}
+    selectedItems.forEach(item => {
+      if (item.pindan_group_id) {
+        if (!pindanGroups[item.pindan_group_id]) {
+          pindanGroups[item.pindan_group_id] = []
+        }
+        pindanGroups[item.pindan_group_id].push(item)
+      }
+    })
+
+    let autoRemark = ''
+    for (const [groupId, groupItems] of Object.entries(pindanGroups)) {
+      const boxSize = groupItems[0]?.boxSize || 'small'
+      let boxCapacity = 0
+      if (boxSize === 'small') boxCapacity = groupItems[0]?.smallBoxCapacity || 0
+      else if (boxSize === 'medium') boxCapacity = groupItems[0]?.mediumBoxCapacity || 0
+      else boxCapacity = groupItems[0]?.largeBoxCapacity || 0
+
+      const totalQty = groupItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+
+      // 检查每个商品的起购量
+      for (const item of groupItems) {
+        if (item.minQuantity && (Number(item.quantity) || 0) < item.minQuantity) {
+          showToast({ title: `${item.name}未达起购量${item.minQuantity}个`, icon: 'none' })
+          return
+        }
+      }
+
+      // 检查是否装满箱子
+      if (totalQty < boxCapacity) {
+        showToast({ title: `拼单还差${boxCapacity - totalQty}个未装满`, icon: 'none' })
+        return
+      }
+
+      // 超出容量时生成备注
+      if (totalQty > boxCapacity) {
+        autoRemark += `${groupItems[0]?.name || '拼单'}超出${totalQty - boxCapacity}个；`
+      }
+    }
+
+    // 如果有超出的备注，让用户确认并补充
+    if (autoRemark) {
+      Taro.showModal({
+        title: '拼单超出容量提示',
+        content: autoRemark + '\n\n请在备注中说明情况',
+        confirmText: '继续提交',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 合并到备注
+            const baseRemark = wx.getStorageSync('checkout_remark') || ''
+            const finalRemark = baseRemark + (baseRemark ? '\n' : '') + autoRemark
+            wx.setStorageSync('checkout_selected_ids', JSON.stringify(selectedIds))
+            wx.setStorageSync('checkout_remark', finalRemark)
+            navigateTo({ url: '/pages/order-confirm/index' })
+          }
+        }
+      })
+      return
+    }
+
     // 保存选中的商品ID，跳转到订单确认页
     wx.setStorageSync('checkout_selected_ids', JSON.stringify(selectedIds))
     navigateTo({ url: '/pages/order-confirm/index' })
@@ -199,6 +265,11 @@ export default function CartPage() {
     if (!editingQuantityItem) return
     if (editQuantity < 1) {
       showToast({ title: '数量不能少于1', icon: 'none' })
+      return
+    }
+    // 起购数量校验
+    if (editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity) {
+      showToast({ title: `起购数量${editingQuantityItem.minQuantity}个`, icon: 'none' })
       return
     }
     try {
@@ -560,9 +631,24 @@ export default function CartPage() {
                     >
                       <Text className="quantity-btn-text">-</Text>
                     </View>
-                    <View className="quantity-value">
-                      <Text className="quantity-num">{editQuantity}</Text>
-                    </View>
+                    <Input
+                      className="quantity-input"
+                      type="number"
+                      value={String(editQuantity)}
+                      onInput={(e: any) => {
+                        const val = e.detail.value
+                        if (val === '') {
+                          setEditQuantity(0)
+                        } else {
+                          setEditQuantity(parseInt(val) || 0)
+                        }
+                      }}
+                      onBlur={(e: any) => {
+                        const val = e.detail.value
+                        const num = parseInt(val) || 1
+                        setEditQuantity(Math.max(1, num))
+                      }}
+                    />
                     <View
                       className="quantity-btn"
                       onClick={() => setEditQuantity(q => q + 1)}
@@ -570,8 +656,8 @@ export default function CartPage() {
                       <Text className="quantity-btn-text">+</Text>
                     </View>
                   </View>
-                  {editingQuantityItem && editingQuantityItem.min_quantity && editQuantity < editingQuantityItem.min_quantity && (
-                    <Text className="quantity-tip">起购量{editingQuantityItem.min_quantity}个</Text>
+                  {editingQuantityItem && editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity && (
+                    <Text className="quantity-tip">起购量{editingQuantityItem.minQuantity}个</Text>
                   )}
                 </View>
               </View>

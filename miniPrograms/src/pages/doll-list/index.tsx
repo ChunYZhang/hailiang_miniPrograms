@@ -91,7 +91,7 @@ export default function DollListPage() {
   const boxCapacity = getBoxCapacity()
   const remainingCapacity = boxCapacity - pindanTotalQty
 
-  const canCompletePindan = pindanItems.length > 0 && pindanItems.every(item => item.quantity >= item.minQuantity) && remainingCapacity >= 0
+  const canCompletePindan = pindanItems.length > 0 && pindanItems.every(item => item.quantity >= item.minQuantity) && remainingCapacity <= 0
 
   console.log('[doll-list] DEBUG:', JSON.stringify(pindanItems.map(i => ({
     name: i.name,
@@ -282,7 +282,13 @@ export default function DollListPage() {
           <View className="pool-content">
             <View className="pool-header">
               <Text className="pool-title">拼单池 - {boxSizeLabel}</Text>
-              <Text className="pool-subtitle">可装约{boxCapacity}个，还差{remainingCapacity}个</Text>
+              <Text className="pool-subtitle">
+                {remainingCapacity > 0
+                  ? `可装约${boxCapacity}个，还差${remainingCapacity}个`
+                  : remainingCapacity === 0
+                    ? `已装满${boxCapacity}个`
+                    : `已超出${Math.abs(remainingCapacity)}个`}
+              </Text>
               <Text className="pool-close" onClick={() => setShowPindanPool(false)}>✕</Text>
             </View>
             <ScrollView scrollY className="pool-body">
@@ -301,7 +307,27 @@ export default function DollListPage() {
                     <View className="pool-item-qty">
                       <View className="qty-adjust">
                         <Text className="qty-btn" onClick={() => updatePindanItemQuantity(item.itemId, Math.max(1, item.quantity - 1))}>-</Text>
-                        <Text className="qty-label">{item.quantity}</Text>
+                        <Input
+                          className="qty-input"
+                          type="number"
+                          value={String(item.quantity)}
+                          onInput={(e: any) => {
+                            const val = e.detail.value
+                            if (val === '') {
+                              // Allow empty while typing
+                              return
+                            }
+                            const num = parseInt(val)
+                            if (!isNaN(num) && num >= 1) {
+                              updatePindanItemQuantity(item.itemId, num)
+                            }
+                          }}
+                          onBlur={(e: any) => {
+                            const val = e.detail.value
+                            const num = parseInt(val) || 1
+                            updatePindanItemQuantity(item.itemId, Math.max(1, num))
+                          }}
+                        />
                         <Text className="qty-btn" onClick={() => updatePindanItemQuantity(item.itemId, item.quantity + 1)}>+</Text>
                       </View>
                       {item.quantity < item.minQuantity && (

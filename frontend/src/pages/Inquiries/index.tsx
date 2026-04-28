@@ -149,16 +149,23 @@ export default function InquiriesPage() {
                   </td>
                   <td className="px-4 py-3">
                     {order.items?.map((item: any, idx: number) => (
-                      <div key={idx}>
-                        <p className="text-xs text-gray-700 font-medium flex items-center gap-1">
+                      <div key={idx} className="mb-1.5">
+                        <p className="text-xs text-gray-700 font-medium flex items-center gap-1 flex-wrap">
                           {item.type === 'outfit' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-xs rounded">搭配</span>}
                           {item.type === 'doll' && <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-xs rounded">娃娃</span>}
                           {item.type === 'accessory' && <span className="px-1.5 py-0.5 bg-green-100 text-green-600 text-xs rounded">配饰</span>}
                           {item.name || item.dollName || '未知商品'}
+                          {item.quantity && item.quantity > 1 && <span className="text-gray-500">×{item.quantity}</span>}
+                          {item.boxSize && <span className="text-xs text-rose-500 bg-rose-50 px-1 rounded">{item.boxSize === 'small' ? '小箱' : item.boxSize === 'medium' ? '中箱' : item.boxSize === 'large' ? '大箱' : item.boxSize}</span>}
                         </p>
-                        <p className="text-xs text-gray-400">
-                          ¥{(item.price || 0).toFixed(2)}
-                        </p>
+                        {(item.defaultAccessory || (item.defaultAccessories && item.defaultAccessories.length > 0) || (item.accessories && item.accessories.length > 0)) && (
+                          <p className="text-xs text-gray-400 truncate max-w-[160px]">
+                            {item.defaultAccessory && `默认:${item.defaultAccessory}`}
+                            {item.defaultAccessories?.length > 0 && ` 搭配:${item.defaultAccessories.map((a: any) => a.name).join('+')}`}
+                            {item.accessories?.length > 0 && ` 自选:${item.accessories.map((a: any) => a.name).join('+')}`}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</p>
                       </div>
                     ))}
                   </td>
@@ -481,12 +488,34 @@ function InquiryDetailModal({ order, onClose, onUpdateStatus }: {
                       </div>
                     )}
                   </div>
+                ) : item.type === 'doll' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-800">{item.name || '未知商品'}</span>
+                        {item.quantity && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">×{item.quantity}</span>}
+                        {item.boxSize && <span className="text-xs bg-rose-50 text-rose-500 px-2 py-0.5 rounded">{item.boxSize === 'small' ? '小箱' : item.boxSize === 'medium' ? '中箱' : item.boxSize === 'large' ? '大箱' : item.boxSize}</span>}
+                      </div>
+                      <span className="text-sm font-bold text-rose-600">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
+                    </div>
+                    {item.defaultAccessory && (
+                      <div className="text-xs text-gray-500 ml-2">默认配饰: {item.defaultAccessory}</div>
+                    )}
+                    {item.defaultAccessories?.length > 0 && (
+                      <div className="text-xs text-gray-500 ml-2">搭配配饰: {item.defaultAccessories.map((a: any) => a.name).join(' + ')}</div>
+                    )}
+                    {item.accessories?.length > 0 && (
+                      <div className="text-xs text-gray-500 ml-2">自选配饰: {item.accessories.map((a: any) => a.name).join(' + ')}</div>
+                    )}
+                    <div className="text-xs text-gray-400 ml-2">单价: ¥{(item.price || 0).toFixed(2)}</div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-800">
-                      {item.type === 'doll' && '娃娃: '}{item.type === 'accessory' && '配饰: '}{item.name || '未知商品'}
+                      {item.type === 'accessory' && '配饰: '}{item.name || '未知商品'}
+                      {item.quantity && <span className="text-xs text-gray-500 ml-1">×{item.quantity}</span>}
                     </span>
-                    <span className="text-sm font-bold text-rose-600">¥{(item.price || 0).toFixed(2)}</span>
+                    <span className="text-sm font-bold text-rose-600">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</span>
                   </div>
                 )}
               </div>

@@ -56,7 +56,39 @@ export default function InquiriesPage() {
             </View>
             <View className="order-items">
               {(order.items || []).map((item: any, idx: number) => (
-                <Text key={idx} className="item-text">{item.name} ×1</Text>
+                <View key={idx} className="item-row">
+                  <Text className="item-name">{item.name}</Text>
+                  {item.type === 'doll' && (
+                    <>
+                      <Text className="item-qty">×{item.quantity || 1}</Text>
+                      {item.boxSize && (
+                        <Text className="item-box">{item.boxSize === 'small' ? '小箱' : item.boxSize === 'medium' ? '中箱' : item.boxSize === 'large' ? '大箱' : item.boxSize}</Text>
+                      )}
+                      {item.defaultAccessory && (
+                        <Text className="item-acc">默认配饰: {item.defaultAccessory}</Text>
+                      )}
+                      {item.accessories && item.accessories.length > 0 && (
+                        <Text className="item-acc">搭配配饰: {item.accessories.map((acc: any) => acc.name).join(' + ')}</Text>
+                      )}
+                      <Text className="item-price">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</Text>
+                    </>
+                  )}
+                  {item.type === 'accessory' && (
+                    <>
+                      <Text className="item-qty">×{item.quantity || 1}</Text>
+                      <Text className="item-price">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</Text>
+                    </>
+                  )}
+                  {item.type === 'outfit' && (
+                    <>
+                      <Text className="item-qty">×{item.quantity || 1}</Text>
+                      {item.defaultAccessories && item.defaultAccessories.length > 0 && (
+                        <Text className="item-acc">搭配配饰: {item.defaultAccessories.map((acc: any) => acc.name).join(' + ')}</Text>
+                      )}
+                      <Text className="item-price">¥{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</Text>
+                    </>
+                  )}
+                </View>
               ))}
             </View>
             <View className="order-footer">
