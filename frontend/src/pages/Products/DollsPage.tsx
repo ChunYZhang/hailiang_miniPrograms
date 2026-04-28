@@ -346,6 +346,9 @@ function DollFormModal({ doll, onClose, onSave }: {
     images: doll?.images || [],
     defaultAccessory: doll?.defaultAccessory || '',
     selectedAccessories: (doll as any)?.selectedAccessories || [],
+    smallBoxCapacity: doll?.smallBoxCapacity || 0,
+    mediumBoxCapacity: doll?.mediumBoxCapacity || 0,
+    largeBoxCapacity: doll?.largeBoxCapacity || 0,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -514,6 +517,42 @@ function DollFormModal({ doll, onClose, onSave }: {
                 }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
               />
+            </div>
+          </div>
+          {/* 箱子容量配置 */}
+          <div className="border-t border-gray-100 pt-4 mt-4">
+            <label className="text-xs font-medium text-gray-600 mb-2 block">箱子容量配置（根据娃娃尺寸设置每个箱子能装多少个）</label>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">小箱子容量</label>
+                <input
+                  type="number"
+                  value={form.smallBoxCapacity || ''}
+                  onChange={e => setForm({ ...form, smallBoxCapacity: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  placeholder="如：500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">中箱子容量</label>
+                <input
+                  type="number"
+                  value={form.mediumBoxCapacity || ''}
+                  onChange={e => setForm({ ...form, mediumBoxCapacity: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  placeholder="如：1000"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">大箱子容量</label>
+                <input
+                  type="number"
+                  value={form.largeBoxCapacity || ''}
+                  onChange={e => setForm({ ...form, largeBoxCapacity: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  placeholder="如：2000"
+                />
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

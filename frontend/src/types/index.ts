@@ -18,6 +18,9 @@ export interface Doll {
   minQuantity: number;
   defaultAccessory?: string;
   selectedAccessories?: { id: string; name: string; price: number; images?: string[]; series?: string }[];
+  smallBoxCapacity?: number;
+  mediumBoxCapacity?: number;
+  largeBoxCapacity?: number;
 }
 
 export interface Accessory {

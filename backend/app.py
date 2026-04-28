@@ -329,6 +329,9 @@ def admin_get_doll_list():
                 doll['minQuantity'] = doll.get('min_quantity', 1)
                 doll['defaultAccessory'] = doll.get('default_accessory') or ''
                 doll['isHot'] = bool(doll.get('is_hot'))
+                doll['smallBoxCapacity'] = doll.get('small_box_capacity') or 0
+                doll['mediumBoxCapacity'] = doll.get('medium_box_capacity') or 0
+                doll['largeBoxCapacity'] = doll.get('large_box_capacity') or 0
                 selected_acc = doll.get('selected_accessories')
                 if isinstance(selected_acc, str):
                     doll['selectedAccessories'] = json.loads(selected_acc) if selected_acc else []
@@ -352,8 +355,8 @@ def admin_create_doll():
         with db.cursor() as cursor:
             doll_id = generate_uuid()
             cursor.execute("""
-                INSERT INTO doll (id, name, price, material, size, stock, status, series, patent_no, description, images, views, inquiries, low_stock_threshold, min_quantity, default_accessory, selected_accessories)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, 0, %s, %s, %s, %s)
+                INSERT INTO doll (id, name, price, material, size, stock, status, series, patent_no, description, images, views, inquiries, low_stock_threshold, min_quantity, default_accessory, selected_accessories, small_box_capacity, medium_box_capacity, large_box_capacity)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, 0, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 doll_id,
                 data.get('name', ''),
@@ -369,7 +372,10 @@ def admin_create_doll():
                 data.get('lowStockThreshold', 10),
                 data.get('minQuantity', 1),
                 data.get('defaultAccessory', ''),
-                json.dumps(data.get('selectedAccessories', []))
+                json.dumps(data.get('selectedAccessories', [])),
+                data.get('smallBoxCapacity', 0),
+                data.get('mediumBoxCapacity', 0),
+                data.get('largeBoxCapacity', 0)
             ))
         db.commit()
         return jsonify({"code": 200, "msg": "创建成功", "data": {"id": doll_id}})
@@ -387,7 +393,8 @@ def admin_update_doll():
         with db.cursor() as cursor:
             cursor.execute("""
                 UPDATE doll SET name=%s, price=%s, material=%s, size=%s, stock=%s, status=%s,
-                series=%s, patent_no=%s, description=%s, images=%s, low_stock_threshold=%s, min_quantity=%s, default_accessory=%s, selected_accessories=%s
+                series=%s, patent_no=%s, description=%s, images=%s, low_stock_threshold=%s, min_quantity=%s, default_accessory=%s, selected_accessories=%s,
+                small_box_capacity=%s, medium_box_capacity=%s, large_box_capacity=%s
                 WHERE id=%s
             """, (
                 data.get('name', ''),
@@ -404,6 +411,9 @@ def admin_update_doll():
                 data.get('minQuantity', 1),
                 data.get('defaultAccessory', ''),
                 json.dumps(data.get('selectedAccessories', [])),
+                data.get('smallBoxCapacity', 0),
+                data.get('mediumBoxCapacity', 0),
+                data.get('largeBoxCapacity', 0),
                 data.get('id')
             ))
         db.commit()
@@ -2267,6 +2277,10 @@ def mobile_doll_detail(doll_id):
             else:
                 doll['isFavorited'] = False
             doll['defaultAccessory'] = doll.get('default_accessory') or ''
+            doll['minQuantity'] = doll.get('min_quantity') or 1
+            doll['smallBoxCapacity'] = doll.get('small_box_capacity') or 0
+            doll['mediumBoxCapacity'] = doll.get('medium_box_capacity') or 0
+            doll['largeBoxCapacity'] = doll.get('large_box_capacity') or 0
             selected_acc = doll.get('selected_accessories')
             if isinstance(selected_acc, str):
                 doll['selectedAccessories'] = json.loads(selected_acc) if selected_acc else []
@@ -2932,7 +2946,7 @@ def mobile_cart_list():
             try:
                 cursor.execute("""
                     SELECT c.id, c.item_type, c.item_id, c.quantity, c.accessories, c.created_at,
-                        c.pindan_group_id, c.pindan_group_name,
+                        c.pindan_group_id, c.pindan_group_name, c.box_size,
                         d.name as doll_name, d.price as doll_price, d.images as doll_images, d.default_accessory as doll_default_accessory,
                         a.name as acc_name, a.price as acc_price, a.images as acc_images,
                         o.name as outfit_name, o.total_price as outfit_price, o.cover_image as outfit_image, o.accessories as outfit_default_accessories
@@ -2987,6 +3001,7 @@ def mobile_cart_list():
                     'createdAt': r['created_at'].strftime('%Y-%m-%d') if r.get('created_at') else '',
                     'pindan_group_id': r.get('pindan_group_id') or '',
                     'pindan_group_name': r.get('pindan_group_name') or '',
+                    'boxSize': r.get('box_size') or 'small',
                 }
                 # 解析已选配饰
                 if r.get('accessories'):
@@ -3039,9 +3054,10 @@ def mobile_cart_add():
     item_id = data.get('item_id')
     accessories = data.get('accessories')  # [{id, name, price}, ...]
     quantity = data.get('quantity', 1)  # 默认为1
+    box_size = data.get('box_size', 'small')  # 默认为小箱子
     pindan_group_id = data.get('pindan_group_id')
     pindan_group_name = data.get('pindan_group_name')
-    print(f"[CART ADD] pindan_group_id={pindan_group_id}, pindan_group_name={pindan_group_name}", flush=True)
+    print(f"[CART ADD] pindan_group_id={pindan_group_id}, pindan_group_name={pindan_group_name}, box_size={box_size}", flush=True)
     if not item_type or not item_id:
         return jsonify({"code": 400, "msg": "参数不完整"})
     user_id = get_mini_user_id()
@@ -3056,14 +3072,14 @@ def mobile_cart_add():
             print(f"[CART ADD] INSERTING: cart_id={cart_id}, user_id={user_id}, item_type={item_type}, item_id={item_id}, pindan_group_id={pindan_group_id}", flush=True)
             # 总是插入新记录，不做重复检查（允许同一商品多次添加到购物车或不同拼单组）
             try:
-                cursor.execute("INSERT INTO mini_cart (id, user_id, item_type, item_id, accessories, quantity, pindan_group_id, pindan_group_name) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (cart_id, user_id, item_type, item_id, acc_json, quantity, pindan_group_id, pindan_group_name))
+                cursor.execute("INSERT INTO mini_cart (id, user_id, item_type, item_id, accessories, quantity, pindan_group_id, pindan_group_name, box_size) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (cart_id, user_id, item_type, item_id, acc_json, quantity, pindan_group_id, pindan_group_name, box_size))
                 print(f"[CART ADD] INSERT SUCCESS", flush=True)
             except Exception as insert_err:
                 print(f"[CART ADD] INSERT FAILED: {insert_err}", flush=True)
                 import traceback
                 traceback.print_exc(file=sys.stdout)
                 try:
-                    cursor.execute("INSERT INTO mini_cart (id, user_id, item_type, item_id, accessories, quantity) VALUES (%s, %s, %s, %s, %s, %s)", (cart_id, user_id, item_type, item_id, acc_json, quantity))
+                    cursor.execute("INSERT INTO mini_cart (id, user_id, item_type, item_id, accessories, quantity, box_size) VALUES (%s, %s, %s, %s, %s, %s, %s)", (cart_id, user_id, item_type, item_id, acc_json, quantity, box_size))
                     print(f"[CART ADD] FALLBACK INSERT SUCCESS", flush=True)
                 except Exception as e2:
                     print(f"[CART ADD] FALLBACK INSERT ALSO FAILED: {e2}", flush=True)
@@ -3083,6 +3099,40 @@ def mobile_cart_delete(cart_id):
             cursor.execute("DELETE FROM mini_cart WHERE id=%s AND user_id=%s", (cart_id, get_mini_user_id()))
             db.commit()
             return jsonify({"code": 200, "msg": "已删除"})
+    finally:
+        db.close()
+
+@app.route('/api/mobile/cart/<cart_id>', methods=['PUT'])
+@mini_login_required
+def mobile_cart_update(cart_id):
+    """更新购物车项数量或配饰"""
+    data = request.get_json() or {}
+    db = get_db()
+    try:
+        with db.cursor() as cursor:
+            # 获取当前购物车项
+            cursor.execute("SELECT * FROM mini_cart WHERE id=%s AND user_id=%s", (cart_id, get_mini_user_id()))
+            item = cursor.fetchone()
+            if not item:
+                return jsonify({"code": 404, "msg": "购物车项不存在"}), 404
+
+            # 更新数量
+            if 'quantity' in data:
+                cursor.execute(
+                    "UPDATE mini_cart SET quantity=%s WHERE id=%s AND user_id=%s",
+                    (data['quantity'], cart_id, get_mini_user_id())
+                )
+
+            # 更新配饰
+            if 'accessories' in data:
+                accessories_json = json.dumps(data['accessories'], ensure_ascii=False)
+                cursor.execute(
+                    "UPDATE mini_cart SET accessories=%s WHERE id=%s AND user_id=%s",
+                    (accessories_json, cart_id, get_mini_user_id())
+                )
+
+            db.commit()
+            return jsonify({"code": 200, "msg": "已更新"})
     finally:
         db.close()
 

@@ -19,6 +19,8 @@ interface CartItem {
   name: string
   price: number
   coverImage: string
+  quantity: number
+  min_quantity?: number
   accessories: Accessory[]
   pindan_group_id?: string
   pindan_group_name?: string
@@ -42,6 +44,10 @@ export default function CartPage() {
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [allAccessories, setAllAccessories] = useState<Accessory[]>([])
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([])
+  // 数量编辑弹窗状态
+  const [showQuantityModal, setShowQuantityModal] = useState(false)
+  const [editingQuantityItem, setEditingQuantityItem] = useState<CartItem | null>(null)
+  const [editQuantity, setEditQuantity] = useState(1)
 
   // 每次页面显示时刷新购物车数据
   useDidShow(() => {
@@ -182,6 +188,36 @@ export default function CartPage() {
     setSelectedAccessoryIds([])
   }
 
+  // 打开数量编辑弹窗
+  const handleEditQuantity = (item: CartItem) => {
+    setEditingQuantityItem(item)
+    setEditQuantity(Number(item.quantity) || 1)
+    setShowQuantityModal(true)
+  }
+
+  const handleQuantityConfirm = async () => {
+    if (!editingQuantityItem) return
+    if (editQuantity < 1) {
+      showToast({ title: '数量不能少于1', icon: 'none' })
+      return
+    }
+    try {
+      await api.cart.update(editingQuantityItem.id, { quantity: editQuantity })
+      showToast({ title: '已更新', icon: 'success' })
+      setShowQuantityModal(false)
+      setEditingQuantityItem(null)
+      loadCart()
+    } catch (e: any) {
+      showToast({ title: e.message || '更新失败', icon: 'none' })
+    }
+  }
+
+  const handleQuantityCancel = () => {
+    setShowQuantityModal(false)
+    setEditingQuantityItem(null)
+    setEditQuantity(1)
+  }
+
   // 计算选中商品的总价
   const selectedTotal = cartItems
     .filter(item => selectedIds.includes(item.id))
@@ -190,7 +226,7 @@ export default function CartPage() {
       if (item.accessories && item.accessories.length > 0) {
         price += item.accessories.reduce((a: number, acc: any) => a + Number(acc.price) || 0, 0)
       }
-      return sum + price
+      return sum + price * (Number(item.quantity) || 1)
     }, 0)
 
   const typeLabel: Record<string, string> = { doll: '', accessory: '配饰', outfit: '' }
@@ -251,7 +287,7 @@ export default function CartPage() {
                   </View>
                   {group.items.map(item => {
                     const isSelected = selectedIds.includes(item.id)
-                    const itemTotal = Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))
+                    const itemTotal = (Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))) * (Number(item.quantity) || 1)
                     return (
                       <View key={item.id} className={`cart-item ${isSelected ? 'selected' : ''}`}>
                         <View className="item-checkbox" onClick={() => toggleSelect(item.id)}>
@@ -314,6 +350,13 @@ export default function CartPage() {
                                   选择配饰+
                                 </Text>
                               )}
+                            </View>
+                          </View>
+                          <View className="item-quantity-row">
+                            <Text className="item-quantity-label">数量</Text>
+                            <View className="item-quantity-edit" onClick={() => handleEditQuantity(item)}>
+                              <Text className="item-quantity-text">{item.quantity}个</Text>
+                              <Text className="edit-icon">✎</Text>
                             </View>
                           </View>
                           <View className="item-footer">
@@ -336,7 +379,7 @@ export default function CartPage() {
                   </View>
                   {groupedCartItems.normalItems.map(item => {
                     const isSelected = selectedIds.includes(item.id)
-                    const itemTotal = Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))
+                    const itemTotal = (Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))) * (Number(item.quantity) || 1)
                     return (
                       <View key={item.id} className={`cart-item ${isSelected ? 'selected' : ''}`}>
                         <View className="item-checkbox" onClick={() => toggleSelect(item.id)}>
@@ -399,6 +442,13 @@ export default function CartPage() {
                                   选择配饰+
                                 </Text>
                               )}
+                            </View>
+                          </View>
+                          <View className="item-quantity-row">
+                            <Text className="item-quantity-label">数量</Text>
+                            <View className="item-quantity-edit" onClick={() => handleEditQuantity(item)}>
+                              <Text className="item-quantity-text">{item.quantity}个</Text>
+                              <Text className="edit-icon">✎</Text>
                             </View>
                           </View>
                           <View className="item-footer">
@@ -485,6 +535,50 @@ export default function CartPage() {
             <View className="modal-footer">
               <View className="modal-btn cancel" onClick={handleAccessoryCancel}>取消</View>
               <View className="modal-btn confirm" onClick={handleAccessoryConfirm}>确定</View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* 数量编辑弹窗 */}
+      {showQuantityModal && (
+        <View className="accessory-modal">
+          <View className="accessory-modal-mask" onClick={handleQuantityCancel} />
+          <View className="accessory-modal-content">
+            <View className="modal-header">
+              <Text className="modal-title">修改数量</Text>
+              <View className="modal-close" onClick={handleQuantityCancel}>✕</View>
+            </View>
+            <View className="modal-body">
+              <View className="quantity-edit-wrap">
+                <View className="quantity-edit-item">
+                  <Text className="quantity-edit-name">{editingQuantityItem?.name}</Text>
+                  <View className="quantity-selector">
+                    <View
+                      className={`quantity-btn ${editQuantity <= 1 ? 'disabled' : ''}`}
+                      onClick={() => setEditQuantity(q => Math.max(1, q - 1))}
+                    >
+                      <Text className="quantity-btn-text">-</Text>
+                    </View>
+                    <View className="quantity-value">
+                      <Text className="quantity-num">{editQuantity}</Text>
+                    </View>
+                    <View
+                      className="quantity-btn"
+                      onClick={() => setEditQuantity(q => q + 1)}
+                    >
+                      <Text className="quantity-btn-text">+</Text>
+                    </View>
+                  </View>
+                  {editingQuantityItem && editingQuantityItem.min_quantity && editQuantity < editingQuantityItem.min_quantity && (
+                    <Text className="quantity-tip">起购量{editingQuantityItem.min_quantity}个</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+            <View className="modal-footer">
+              <View className="modal-btn cancel" onClick={handleQuantityCancel}>取消</View>
+              <View className="modal-btn confirm" onClick={handleQuantityConfirm}>确定</View>
             </View>
           </View>
         </View>

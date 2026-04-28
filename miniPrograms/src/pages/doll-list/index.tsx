@@ -7,7 +7,7 @@ import { useGlobalState } from '../../store'
 import './index.scss'
 
 export default function DollListPage() {
-  const { isPindanMode, pindanItems, exitPindanMode, clearPindan, removeFromPindan } = useGlobalState()
+  const { isPindanMode, pindanItems, exitPindanMode, clearPindan, removeFromPindan, updatePindanItemQuantity } = useGlobalState()
   const [dolls, setDolls] = useState<any[]>([])
   const [seriesList, setSeriesList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,11 +76,41 @@ export default function DollListPage() {
     return sum + itemTotal
   }, 0)
   const pindanTotalQty = pindanItems.reduce((sum, item) => sum + item.quantity, 0)
-  const canCompletePindan = pindanItems.length > 0 && pindanItems.every(item => item.quantity >= item.minQuantity)
+
+  // 箱子信息
+  const firstItem = pindanItems[0]
+  const boxSize = firstItem?.boxSize || 'small'
+  const boxSizeLabel = boxSize === 'small' ? '小箱' : boxSize === 'medium' ? '中箱' : boxSize === 'large' ? '大箱' : '小箱'
+  const getBoxCapacity = () => {
+    if (!firstItem) return 0
+    if (boxSize === 'small') return firstItem.smallBoxCapacity || 0
+    if (boxSize === 'medium') return firstItem.mediumBoxCapacity || 0
+    if (boxSize === 'large') return firstItem.largeBoxCapacity || 0
+    return 0
+  }
+  const boxCapacity = getBoxCapacity()
+  const remainingCapacity = boxCapacity - pindanTotalQty
+
+  const canCompletePindan = pindanItems.length > 0 && pindanItems.every(item => item.quantity >= item.minQuantity) && remainingCapacity >= 0
+
+  console.log('[doll-list] DEBUG:', JSON.stringify(pindanItems.map(i => ({
+    name: i.name,
+    quantity: i.quantity,
+    minQuantity: i.minQuantity,
+    pass: i.quantity >= i.minQuantity
+  }))))
+  console.log('[doll-list] canCompletePindan:', canCompletePindan, 'remainingCapacity:', remainingCapacity)
 
   const handleCompletePindan = async () => {
+    console.log('[doll-list] canCompletePindan:', canCompletePindan, 'pindanItems:', pindanItems.map(i => ({ name: i.name, quantity: i.quantity, minQuantity: i.minQuantity })))
     if (!canCompletePindan) {
-      Taro.showToast({ title: '拼单数量未达起购量', icon: 'none' })
+      const totalShortage = pindanItems.reduce((sum, item) => {
+        if (item.quantity < item.minQuantity) {
+          return sum + (item.minQuantity - item.quantity)
+        }
+        return sum
+      }, 0)
+      Taro.showToast({ title: `未达起购数量，还差${totalShortage}个`, icon: 'none' })
       return
     }
     try {
@@ -92,6 +122,7 @@ export default function DollListPage() {
           quantity: item.quantity,
           pindan_group_id: item.pindanGroupId,
           pindan_group_name: item.pindanGroupName,
+          box_size: item.boxSize,
         })
       }
       clearPindan()
@@ -250,7 +281,8 @@ export default function DollListPage() {
           <View className="pool-mask" onClick={() => setShowPindanPool(false)} />
           <View className="pool-content">
             <View className="pool-header">
-              <Text className="pool-title">拼单池</Text>
+              <Text className="pool-title">拼单池 - {boxSizeLabel}</Text>
+              <Text className="pool-subtitle">可装约{boxCapacity}个，还差{remainingCapacity}个</Text>
               <Text className="pool-close" onClick={() => setShowPindanPool(false)}>✕</Text>
             </View>
             <ScrollView scrollY className="pool-body">
@@ -264,13 +296,17 @@ export default function DollListPage() {
                     <Image className="pool-item-image" src={item.coverImage} mode="aspectFill" />
                     <View className="pool-item-info">
                       <Text className="pool-item-name">{item.name}</Text>
-                      <Text className="pool-item-price">¥{((item.price || 0) + (item.accessoriesPrice || 0)) * item.quantity}</Text>
-                      <View className="pool-item-qty">
-                        <Text className="qty-text">x{item.quantity}</Text>
-                        {item.quantity < item.minQuantity && (
-                          <Text className="qty-tip">（差{item.minQuantity - item.quantity}件）</Text>
-                        )}
+                      <Text className="pool-item-price">¥{(((item.price || 0) + (item.accessoriesPrice || 0)) * item.quantity).toFixed(2)}</Text>
+                    </View>
+                    <View className="pool-item-qty">
+                      <View className="qty-adjust">
+                        <Text className="qty-btn" onClick={() => updatePindanItemQuantity(item.itemId, Math.max(1, item.quantity - 1))}>-</Text>
+                        <Text className="qty-label">{item.quantity}</Text>
+                        <Text className="qty-btn" onClick={() => updatePindanItemQuantity(item.itemId, item.quantity + 1)}>+</Text>
                       </View>
+                      {item.quantity < item.minQuantity && (
+                        <Text className="qty-tip">（差{item.minQuantity - item.quantity}件）</Text>
+                      )}
                     </View>
                     <View className="pool-item-remove" onClick={() => removeFromPindan(item.itemId)}>
                       <Text className="remove-text">删除</Text>

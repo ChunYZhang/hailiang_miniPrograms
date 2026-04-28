@@ -144,7 +144,8 @@ export const api = {
   // 购物车
   cart: {
     list: () => get<any[]>('/api/mobile/cart'),
-    add: (data: { item_type: string; item_id: string; accessories?: any[]; quantity?: number; pindan_group_id?: string; pindan_group_name?: string }) => post('/api/mobile/cart', data),
+    add: (data: { item_type: string; item_id: string; accessories?: any[]; quantity?: number; pindan_group_id?: string; pindan_group_name?: string; box_size?: string }) => post('/api/mobile/cart', data),
+    update: (id: string, data: { quantity?: number; accessories?: any[] }) => request(`/api/mobile/cart/${id}`, { method: 'PUT', body: data }),
     remove: (id: string) => del(`/api/mobile/cart/${id}`),
     clear: () => post('/api/mobile/cart/clear'),
     submit: (data: { user_name: string; user_phone: string; address?: string; remark?: string; items: any[], cart_item_ids?: string[] }) =>

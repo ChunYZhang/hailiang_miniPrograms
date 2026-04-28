@@ -19,6 +19,10 @@ interface PindanItem {
   minQuantity: number
   pindanGroupId: string
   pindanGroupName: string
+  boxSize?: 'small' | 'medium' | 'large'
+  smallBoxCapacity?: number
+  mediumBoxCapacity?: number
+  largeBoxCapacity?: number
 }
 
 interface UserInfo {
@@ -131,10 +135,10 @@ export function GlobalProvider({ children }: { children: any }) {
     })
   }, [])
 
-  const updatePindanItemQuantity = useCallback((itemId: string, quantity: number) => {
+  const updatePindanItemQuantity = useCallback((pindanItemId: string, quantity: number) => {
     setPindanItems(prev =>
       prev.map(i =>
-        i.itemId === itemId ? { ...i, quantity } : i
+        i.itemId === pindanItemId ? { ...i, quantity } : i
       )
     )
   }, [])

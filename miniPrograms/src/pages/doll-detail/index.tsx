@@ -28,6 +28,30 @@ export default function DollDetailPage() {
   const [savedAccessories, setSavedAccessories] = useState<Accessory[]>([])
   // 购物车确认弹窗
   const [showCartConfirm, setShowCartConfirm] = useState(false)
+  // 箱子选择
+  const [selectedBoxSize, setSelectedBoxSize] = useState<'small' | 'medium' | 'large'>('small')
+
+  useEffect(() => {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    const id = (page as any).options?.id
+    if (id) loadDetail(id)
+  }, [])
+
+  // 获取当前箱子容量
+  const getBoxCapacity = () => {
+    if (!doll) return 0
+    if (selectedBoxSize === 'small') return doll.smallBoxCapacity || doll.small_box_capacity || 0
+    if (selectedBoxSize === 'medium') return doll.mediumBoxCapacity || doll.medium_box_capacity || 0
+    return doll.largeBoxCapacity || doll.large_box_capacity || 0
+  }
+
+  // 获取箱子尺寸标签
+  const getBoxSizeLabel = () => {
+    if (selectedBoxSize === 'small') return '小箱'
+    if (selectedBoxSize === 'medium') return '中箱'
+    return '大箱'
+  }
 
   useEffect(() => {
     const pages = getCurrentPages()
@@ -117,6 +141,7 @@ export default function DollDetailPage() {
       return
     }
     setQuantity(1)
+    setSelectedBoxSize('small')
     setShowCartConfirm(true)
   }
 
@@ -128,6 +153,7 @@ export default function DollDetailPage() {
         item_id: doll.id,
         accessories: accessories,
         quantity: quantity,
+        box_size: selectedBoxSize,
       })
       showToast({ title: '已加入购物车', icon: 'success' })
       setShowCartConfirm(false)
@@ -157,9 +183,13 @@ export default function DollDetailPage() {
       coverImage: images[0] || '',
       quantity,
       accessories,
-      minQuantity: doll.min_quantity || 1,
+      minQuantity: doll.minQuantity || doll.min_quantity || 1,
       pindanGroupId: groupId,
       pindanGroupName: groupName,
+      boxSize: selectedBoxSize,
+      smallBoxCapacity: doll.smallBoxCapacity || doll.small_box_capacity || 0,
+      mediumBoxCapacity: doll.mediumBoxCapacity || doll.medium_box_capacity || 0,
+      largeBoxCapacity: doll.largeBoxCapacity || doll.large_box_capacity || 0,
     })
     enterPindanMode()
     setShowCartConfirm(false)
@@ -175,6 +205,8 @@ export default function DollDetailPage() {
     }
     const accessories = savedAccessories.map(acc => ({ id: acc.id, name: acc.name, price: acc.price }))
     const firstItem = pindanItems[0]
+    // 如果已有拼单商品，沿用同一个箱尺寸；否则使用当前选择的
+    const poolBoxSize = firstItem?.boxSize || selectedBoxSize
     const { groupId, groupName } = firstItem?.pindanGroupId
       ? { groupId: firstItem.pindanGroupId, groupName: firstItem.pindanGroupName }
       : createPindanGroup(userInfo?.nickname)
@@ -189,9 +221,13 @@ export default function DollDetailPage() {
       coverImage: images[0] || '',
       quantity,
       accessories,
-      minQuantity: doll.min_quantity || 1,
+      minQuantity: doll.minQuantity || doll.min_quantity || 1,
       pindanGroupId: groupId,
       pindanGroupName: groupName,
+      boxSize: poolBoxSize,
+      smallBoxCapacity: doll.smallBoxCapacity || doll.small_box_capacity || 0,
+      mediumBoxCapacity: doll.mediumBoxCapacity || doll.medium_box_capacity || 0,
+      largeBoxCapacity: doll.largeBoxCapacity || doll.large_box_capacity || 0,
     })
     showToast({ title: '已加入拼单池', icon: 'success' })
     switchTab({ url: '/pages/doll-list/index' })
@@ -283,15 +319,9 @@ export default function DollDetailPage() {
         <View className="action-btn accessory-btn" onClick={handleOpenAccessoryModal}>
           <Text className="action-text">{savedAccessories.length > 0 ? `已搭配${savedAccessories.length}个` : '搭配配饰'}</Text>
         </View>
-        {isPindanMode ? (
-          <View className="action-btn cart-btn" onClick={handleAddToPindanPool}>
-            <Text className="action-text-white">加入拼单池</Text>
-          </View>
-        ) : (
-          <View className="action-btn cart-btn" onClick={handleOpenCartConfirm}>
-            <Text className="action-text-white">加入购物车</Text>
-          </View>
-        )}
+        <View className="action-btn cart-btn" onClick={handleOpenCartConfirm}>
+          <Text className="action-text-white">{isPindanMode ? '加入拼单池' : '加入购物车'}</Text>
+        </View>
       </View>
 
       {/* 配饰选择弹窗 */}
@@ -368,6 +398,45 @@ export default function DollDetailPage() {
                 </View>
               </View>
 
+              {/* 箱子选择 - 拼单模式下不显示 */}
+              {!isPindanMode && (
+                <View className="confirm-box-section">
+                  <Text className="confirm-section-title">选择箱子</Text>
+                  <View className="box-selector">
+                    {doll.smallBoxCapacity > 0 && (
+                      <View
+                        className={`box-option ${selectedBoxSize === 'small' ? 'selected' : ''}`}
+                        onClick={() => setSelectedBoxSize('small')}
+                      >
+                        <Text className="box-option-label">小箱</Text>
+                        <Text className="box-option-capacity">可装{doll.smallBoxCapacity}个</Text>
+                      </View>
+                    )}
+                    {doll.mediumBoxCapacity > 0 && (
+                      <View
+                        className={`box-option ${selectedBoxSize === 'medium' ? 'selected' : ''}`}
+                        onClick={() => setSelectedBoxSize('medium')}
+                      >
+                        <Text className="box-option-label">中箱</Text>
+                        <Text className="box-option-capacity">可装{doll.mediumBoxCapacity}个</Text>
+                      </View>
+                    )}
+                    {doll.largeBoxCapacity > 0 && (
+                      <View
+                        className={`box-option ${selectedBoxSize === 'large' ? 'selected' : ''}`}
+                        onClick={() => setSelectedBoxSize('large')}
+                      >
+                        <Text className="box-option-label">大箱</Text>
+                        <Text className="box-option-capacity">可装{doll.largeBoxCapacity}个</Text>
+                      </View>
+                    )}
+                    {doll.smallBoxCapacity === 0 && doll.mediumBoxCapacity === 0 && doll.largeBoxCapacity === 0 && (
+                      <Text className="text-gray-400 text-sm">该商品未设置箱子容量</Text>
+                    )}
+                  </View>
+                </View>
+              )}
+
               {/* 配饰列表 */}
               {savedAccessories.length > 0 && (
                 <View className="confirm-accessories-section">
@@ -390,7 +459,7 @@ export default function DollDetailPage() {
 
               {/* 数量选择 */}
               <View className="confirm-quantity-section">
-                <Text className="confirm-quantity-label">数量</Text>
+                <Text className="confirm-quantity-label">{isPindanMode ? '数量' : '箱数'}</Text>
                 <View className="quantity-selector">
                   <View
                     className={`quantity-btn ${quantity <= 1 ? 'disabled' : ''}`}
@@ -413,7 +482,7 @@ export default function DollDetailPage() {
               {/* 价格明细 */}
               <View className="confirm-price-section">
                 <View className="price-row">
-                  <Text className="price-label">娃娃价格</Text>
+                  <Text className="price-label">娃娃单价</Text>
                   <Text className="price-value">¥{(Number(doll.price) || 0).toFixed(2)}</Text>
                 </View>
                 {savedAccessories.length > 0 && (
@@ -423,8 +492,8 @@ export default function DollDetailPage() {
                   </View>
                 )}
                 <View className="price-row">
-                  <Text className="price-label">数量</Text>
-                  <Text className="price-value">×{quantity}</Text>
+                  <Text className="price-label">{isPindanMode ? '数量' : '箱数'}</Text>
+                  <Text className="price-value">×{quantity} {isPindanMode ? '个' : getBoxSizeLabel()}</Text>
                 </View>
                 <View className="price-row total-row">
                   <Text className="total-label">合计</Text>
@@ -435,7 +504,7 @@ export default function DollDetailPage() {
             <View className="modal-footer">
               <View className="modal-btn cancel" onClick={() => setShowCartConfirm(false)}>取消</View>
               {isPindanMode ? (
-                <View className="modal-btn confirm" onClick={handleConfirmAddToCart}>加入拼单池</View>
+                <View className="modal-btn confirm" onClick={handleAddToPindanPool}>加入拼单池</View>
               ) : (
                 <>
                   <View className="modal-btn pindan" onClick={handleStartPindan}>发起拼单</View>

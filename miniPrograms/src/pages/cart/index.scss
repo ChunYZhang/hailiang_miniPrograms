@@ -471,3 +471,89 @@
   font-size: 11px;
   color: #999;
 }
+
+// 数量编辑
+.item-quantity-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.item-quantity-label {
+  font-size: 12px;
+  color: #999;
+  width: 60px;
+}
+
+.item-quantity-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.item-quantity-text {
+  font-size: 13px;
+  color: #333;
+}
+
+// 数量编辑弹窗
+.quantity-edit-wrap {
+  padding: 16px 0;
+}
+
+.quantity-edit-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.quantity-edit-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.quantity-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.quantity-btn.disabled {
+  opacity: 0.4;
+}
+
+.quantity-btn-text {
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+}
+
+.quantity-value {
+  width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantity-num {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.quantity-tip {
+  font-size: 12px;
+  color: #ff4d4f;
+}

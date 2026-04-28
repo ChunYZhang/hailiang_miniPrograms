@@ -415,6 +415,54 @@
   display: block;
 }
 
+.confirm-box-section {
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.box-selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.box-option {
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  border: 2px solid transparent;
+  min-width: 80px;
+  text-align: center;
+}
+
+.box-option.selected {
+  background: #fff0f0;
+  border-color: #f43f5e;
+}
+
+.box-option-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  display: block;
+}
+
+.box-option-capacity {
+  font-size: 12px;
+  color: #666;
+  display: block;
+  margin-top: 4px;
+}
+
+.box-option.selected .box-option-label {
+  color: #f43f5e;
+}
+
+.box-option.selected .box-option-capacity {
+  color: #f43f5e;
+}
+
 .confirm-accessories-section {
   margin-bottom: 16px;
   box-sizing: border-box;

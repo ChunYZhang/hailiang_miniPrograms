@@ -93,6 +93,7 @@ export default function CartModal({ item, itemType, show, onClose }: Props) {
     // 获取拼单组信息：如果已有拼单商品则沿用，否则创建新组
     const firstItem = pindanItems[0]
     const { groupId, groupName } = firstItem?.pindanGroupId ? { groupId: firstItem.pindanGroupId, groupName: firstItem.pindanGroupName } : createPindanGroup(userInfo?.nickname)
+    const poolBoxSize = firstItem?.boxSize || 'small'
 
     addToPindan({
       id: Date.now().toString(),
@@ -107,6 +108,10 @@ export default function CartModal({ item, itemType, show, onClose }: Props) {
       minQuantity,
       pindanGroupId: groupId,
       pindanGroupName: groupName,
+      boxSize: poolBoxSize,
+      smallBoxCapacity: firstItem?.smallBoxCapacity || 0,
+      mediumBoxCapacity: firstItem?.mediumBoxCapacity || 0,
+      largeBoxCapacity: firstItem?.largeBoxCapacity || 0,
     })
     showToast({ title: '已添加到拼单池', icon: 'success' })
     onClose()
@@ -166,6 +171,11 @@ export default function CartModal({ item, itemType, show, onClose }: Props) {
       .map(acc => ({ id: acc.id, name: acc.name, price: acc.price }))
 
     const { groupId, groupName } = createPindanGroup(userInfo?.nickname)
+    // 获取箱子尺寸和容量（如果有的话）
+    const boxSize = item.boxSize || 'small'
+    const smallBoxCapacity = item.small_box_capacity || item.smallBoxCapacity || 0
+    const mediumBoxCapacity = item.medium_box_capacity || item.mediumBoxCapacity || 0
+    const largeBoxCapacity = item.large_box_capacity || item.largeBoxCapacity || 0
 
     addToPindan({
       id: Date.now().toString(),
@@ -180,6 +190,10 @@ export default function CartModal({ item, itemType, show, onClose }: Props) {
       minQuantity,
       pindanGroupId: groupId,
       pindanGroupName: groupName,
+      boxSize,
+      smallBoxCapacity,
+      mediumBoxCapacity,
+      largeBoxCapacity,
     })
     enterPindanMode()
     onClose()
