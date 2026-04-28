@@ -1,0 +1,74 @@
+.page-inquiries {
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 12px;
+}
+
+.loading,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.order-no {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.order-status {
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.item-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-date {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.order-amount {
+  font-size: 15px;
+  color: #f43f5e;
+  font-weight: 700;
+}

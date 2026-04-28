@@ -1,0 +1,53 @@
+.page-list {
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+.loading,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.item-row {
+  background: white;
+  padding: 12px;
+  margin-bottom: 1px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-image {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-name {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-price {
+  font-size: 14px;
+  color: #f43f5e;
+  font-weight: 600;
+}
+
+.item-action {
+  padding: 6px 10px;
+}

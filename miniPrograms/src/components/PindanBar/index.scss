@@ -1,0 +1,231 @@
+.pindan-bar {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+}
+
+// 右侧悬浮小卡片
+.pindan-float {
+  position: fixed;
+  right: 12px;
+  bottom: 180px;
+  width: 56px;
+  background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+  border-radius: 28px;
+  box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.pindan-float-count {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pindan-float-text {
+  color: #fff;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.pindan-float-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pindan-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pindan-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pindan-badge {
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.pindan-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.pindan-count {
+  font-size: 12px;
+  color: #999;
+}
+
+.pindan-bar-right {
+  display: flex;
+  align-items: center;
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: #999;
+}
+
+.pindan-bar-content {
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.pindan-group {
+  display: inline-flex;
+  flex-direction: column;
+  margin-right: 16px;
+  background: #fff7f0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.pindan-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #ffb685;
+}
+
+.pindan-group-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff6b00;
+}
+
+.pindan-group-count {
+  font-size: 10px;
+  color: #999;
+}
+
+.pindan-item {
+  display: inline-flex;
+  align-items: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 8px;
+  margin-right: 10px;
+  width: 200px;
+}
+
+.pindan-item-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #f0f0f0;
+}
+
+.pindan-item-info {
+  flex: 1;
+  padding: 0 8px;
+}
+
+.pindan-item-name {
+  font-size: 12px;
+  color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pindan-item-price {
+  font-size: 12px;
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.pindan-item-quantity {
+  text-align: center;
+  margin-right: 8px;
+}
+
+.qty-label {
+  font-size: 12px;
+  color: #333;
+}
+
+.qty-tip {
+  font-size: 10px;
+  color: #ff4d4f;
+  display: block;
+}
+
+.pindan-item-remove {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-icon {
+  font-size: 14px;
+  color: #666;
+}
+
+.pindan-bar-footer {
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px;
+  padding-bottom: 10px;
+}
+
+.btn-cancel {
+  padding: 10px 16px;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.btn-save {
+  flex: 1;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff4d4f 0%, #ff6b6b 100%);
+  border-radius: 20px;
+  text-align: center;
+}
+
+.btn-save.disabled {
+  background: #ccc;
+}
+
+.btn-save-text {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 500;
+}

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+*.log
+
+# Node
+node_modules/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Mini program
+miniPrograms/node_modules/
+miniPrograms/.hbuilderx/
+miniPrograms/unpackage/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# Backend
+backend/venv/
+backend/.env
+
+# Custom
+nimiKey.txt
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+
+# Misc
+Thumbs.db
