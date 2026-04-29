@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { View, Text, Image, ScrollView, Swiper, SwiperItem } from '@tarojs/components'
 import { showToast, switchTab } from '@tarojs/taro'
 import { api } from '../../services/api'
@@ -30,12 +30,16 @@ export default function DollDetailPage() {
   const [showCartConfirm, setShowCartConfirm] = useState(false)
   // 箱子选择
   const [selectedBoxSize, setSelectedBoxSize] = useState<'small' | 'medium' | 'large'>('small')
+  const loadedRef = useRef(false)
 
   useEffect(() => {
     const pages = getCurrentPages()
     const page = pages[pages.length - 1]
     const id = (page as any).options?.id
-    if (id) loadDetail(id)
+    if (id && !loadedRef.current) {
+      loadedRef.current = true
+      loadDetail(id)
+    }
   }, [])
 
   // 获取当前箱子容量
