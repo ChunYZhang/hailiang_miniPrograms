@@ -187,10 +187,12 @@ export default function OrderConfirmPage() {
     setCartCount(res.data?.length || 0)
   }
 
+// price对于拼单是(娃娃+配饰)单价需要*quantity，对于非拼单是(娃娃+配饰)*箱子容量*箱数(总价)
   const totalPrice = cartItems.reduce((sum, item) => {
-    const itemPrice = Number(item.price) || 0
-    const accPrice = (item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price) || 0, 0)
-    return sum + (itemPrice + accPrice) * (Number(item.quantity) || 1)
+    const itemTotal = item.pindan_group_id
+      ? Number(item.price || 0) * (Number(item.quantity) || 1)
+      : Number(item.price || 0)
+    return sum + itemTotal
   }, 0)
 
   const typeLabel: Record<string, string> = { doll: '娃娃', accessory: '配饰', outfit: '搭配' }
@@ -231,7 +233,11 @@ export default function OrderConfirmPage() {
         <View className="section-title">商品信息</View>
         <View className="goods-list">
           {cartItems.map(item => {
-            const itemTotal = (Number(item.price || 0) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price) || 0, 0))) * (Number(item.quantity) || 1)
+            // 非拼单：price已经是(娃娃+配饰)*箱子容量*箱子个数
+            // 拼单：price已含(娃娃+配饰)，直接price*quantity
+            const itemTotal = item.pindan_group_id
+              ? Number(item.price || 0) * (Number(item.quantity) || 1)
+              : Number(item.price || 0)
             return (
               <View key={item.id} className="goods-item">
                 <Image
@@ -258,7 +264,16 @@ export default function OrderConfirmPage() {
                       搭配配饰: {item.accessories.map((acc: any) => acc.name).join(' + ')}
                     </Text>
                   )}
-                  <Text className="goods-quantity">数量: {item.quantity}个</Text>
+                  {item.pindan_group_id ? (
+                    <Text className="goods-quantity">数量: {item.quantity}个</Text>
+                  ) : (
+                    (() => {
+                      const bs = item.boxSize || 'small'
+                      const cap = bs === 'small' ? (item.smallBoxCapacity || 0) : bs === 'medium' ? (item.mediumBoxCapacity || 0) : (item.largeBoxCapacity || 0)
+                      const bsLabel = bs === 'small' ? '小箱' : bs === 'medium' ? '中箱' : '大箱'
+                      return <Text className="goods-quantity">数量: {item.quantity}个 {bsLabel}(约{cap}个)</Text>
+                    })()
+                  )}
                 </View>
                 <View className="goods-right">
                   <Text className="goods-price">¥{itemTotal.toFixed(2)}</Text>

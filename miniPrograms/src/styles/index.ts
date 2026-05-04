@@ -18,5 +18,5 @@ export const colors = {
   },
 }
 
-// export const apiBaseUrl = 'https://hl.aiwisely.cn'
-export const apiBaseUrl = 'http://localhost:5001'
+export const apiBaseUrl = 'https://hl.aiwisely.cn'
+// export const apiBaseUrl = 'http://localhost:5001'

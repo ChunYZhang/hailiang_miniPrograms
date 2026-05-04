@@ -39,9 +39,13 @@ DB_CONFIG = {
 
 # 微信小程序配置（需要从微信公众平台获取）
 WECHAT_MINI_APP = {
-    "appid": "your_appid_here",      # 替换为你的小程序 AppID
-    "secret": "your_secret_here",    # 替换为你的小程序 AppSecret
+    "appid": "wxfda6f9576050a2b6",      # 替换为你的小程序 AppID
+    "secret": "30e60e6c7c7639412286a4d0aeb364af",    # 替换为你的小程序 AppSecret
 }
+
+# 图片访问基础URL（部署到服务器时请改为实际域名）
+UPLOAD_BASE_URL = "https://hl.aiwisely.cn"
+
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -1475,10 +1479,10 @@ def admin_get_chart_data():
             doll_views = cursor.fetchall()
 
             cursor.execute("""
-                SELECT DATE_FORMAT(created_at, '%%Y-%%m-%%d') as month, COUNT(*) as count
+                SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as month, COUNT(*) as count
                 FROM user
                 WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-                GROUP BY DATE_FORMAT(created_at, '%%Y-%%m-%%d')
+                GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
                 ORDER BY month
             """)
             user_registrations = cursor.fetchall()
@@ -1987,8 +1991,7 @@ def upload_image():
 
     file.save(filepath)
 
-    base_url = request.host_url.rstrip('/')
-    url = f"{base_url}/uploads/{filename}"
+    url = f"{UPLOAD_BASE_URL}/uploads/{filename}"
     return jsonify({"code": 200, "msg": "上传成功", "data": {"url": url}})
 
 
@@ -3020,13 +3023,28 @@ def mobile_cart_list():
                 if r['item_type'] == 'doll':
                     imgs = json.loads(r['doll_images']) if isinstance(r['doll_images'], str) else (r['doll_images'] or [])
                     item['name'] = r['doll_name']
-                    item['price'] = float(r['doll_price'] or 0)
                     item['coverImage'] = imgs[0] if imgs else ''
                     item['defaultAccessory'] = r.get('doll_default_accessory') or ''
                     item['minQuantity'] = r.get('doll_min_quantity') or 1
                     item['smallBoxCapacity'] = r.get('small_box_capacity') or 0
                     item['mediumBoxCapacity'] = r.get('medium_box_capacity') or 0
                     item['largeBoxCapacity'] = r.get('large_box_capacity') or 0
+                    # 计算配饰总价
+                    acc_list = r.get('accessories') or []
+                    if isinstance(acc_list, str):
+                        try: acc_list = json.loads(acc_list)
+                        except: acc_list = []
+                    acc_total = sum(float(a.get('price') or 0) for a in acc_list)
+                    doll_price = float(r['doll_price'] or 0)
+                    box_size = r.get('box_size') or 'small'
+                    qty = r['quantity'] or 1
+                    if r.get('pindan_group_id'):
+                        # 拼单：price是娃娃单价+配饰，quantity是个数
+                        item['price'] = doll_price + acc_total
+                    else:
+                        # 非拼单：quantity是箱子个数，price=(娃娃+配饰)*箱子容量
+                        box_cap = item['smallBoxCapacity'] if box_size == 'small' else (item['mediumBoxCapacity'] if box_size == 'medium' else (item['largeBoxCapacity'] or 0))
+                        item['price'] = (doll_price + acc_total) * box_cap * qty
                 elif r['item_type'] == 'accessory':
                     imgs = json.loads(r['acc_images']) if isinstance(r['acc_images'], str) else (r['acc_images'] or [])
                     item['name'] = r['acc_name']
@@ -3200,7 +3218,7 @@ def mobile_inquiry_submit():
                 total_amount = 0
                 enriched_items = []
                 for item in group_data['items']:
-                    qty = item.get('quantity', 1)
+                    qty = item.get('quantity', 1)  # 拼单时qty是个数，非拼单时qty是箱子个数
                     if item.get('item_type') == 'doll':
                         cursor.execute("SELECT name, price FROM doll WHERE id=%s", (item['item_id'],))
                         d = cursor.fetchone()
@@ -3208,13 +3226,20 @@ def mobile_inquiry_submit():
                             doll_price = float(d['price'] or 0)
                             accessories = item.get('accessories', []) or []
                             acc_total = sum(float(acc.get('price') or 0) for acc in accessories)
-                            item_price = (doll_price + acc_total) * qty
+                            if item.get('pindan_group_id'):
+                                # 拼单：price是单价，quantity是个数
+                                item_price = (doll_price + acc_total) * qty
+                                unit_price = doll_price + acc_total
+                            else:
+                                # 非拼单：price已经是(娃娃+配饰)*箱子容量*箱子个数，直接用前端传过来的price
+                                item_price = float(item.get('price') or 0)
+                                unit_price = doll_price + acc_total  # 存单价用于显示
                             total_amount += item_price
                             enriched_items.append({
                                 'type': 'doll',
                                 'id': item['item_id'],
                                 'name': d['name'],
-                                'price': doll_price + acc_total,
+                                'price': unit_price,
                                 'quantity': qty,
                                 'boxSize': item.get('boxSize', ''),
                                 'defaultAccessory': item.get('defaultAccessory', ''),
@@ -3276,14 +3301,16 @@ def mobile_inquiry_submit():
                             doll_price = float(d['price'] or 0)
                             accessories = item.get('accessories', []) or []
                             acc_total = sum(float(acc.get('price') or 0) for acc in accessories)
-                            item_price = (doll_price + acc_total) * qty
+                            # 非拼单：price由前端计算好，是(娃娃+配饰)*箱子容量*箱子个数
+                            # quantity是箱子个数，price是总价
+                            item_price = float(item.get('price') or 0)
                             total_amount += item_price
                             enriched_items.append({
                                 'type': 'doll',
                                 'id': item['item_id'],
                                 'name': d['name'],
-                                'price': doll_price,
-                                'quantity': qty,
+                                'price': doll_price + acc_total,  # 存单价
+                                'quantity': qty,  # 箱子个数
                                 'boxSize': item.get('boxSize', ''),
                                 'defaultAccessory': item.get('defaultAccessory', ''),
                                 'accessories': accessories

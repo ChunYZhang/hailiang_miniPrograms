@@ -229,13 +229,15 @@ export default function CartPage() {
         .filter(acc => selectedAccessoryIds.includes(acc.id))
         .map(acc => ({ id: acc.id, name: acc.name, price: acc.price }))
 
-      // 删除旧记录
+      // 先删除旧记录，等完成后添加新记录
       await api.cart.remove(editingItem.id)
-      // 添加新记录
+      // 添加新记录，保留原有的 quantity 和 box_size
       await api.cart.add({
         item_type: editingItem.item_type,
         item_id: editingItem.item_id,
         accessories: selectedAccessories,
+        quantity: editingItem.quantity,
+        box_size: editingItem.boxSize,
         pindan_group_id: editingItem.pindan_group_id,
         pindan_group_name: editingItem.pindan_group_name,
       })
@@ -267,8 +269,9 @@ export default function CartPage() {
       showToast({ title: '数量不能少于1', icon: 'none' })
       return
     }
-    // 起购数量校验
-    if (editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity) {
+    // 起购数量校验：仅拼单商品需要校验（拼单 quantity 是个数）
+    // 普通商品 quantity 是箱子个数，按箱购买没有起购限制
+    if (editingQuantityItem.pindan_group_id && editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity) {
       showToast({ title: `起购数量${editingQuantityItem.minQuantity}个`, icon: 'none' })
       return
     }
@@ -290,14 +293,18 @@ export default function CartPage() {
   }
 
   // 计算选中商品的总价
+  // 非拼单：price已经是(娃娃+配饰)*箱子容量*箱子个数，直接用price
+  // 拼单：price已含(娃娃+配饰)，直接price*quantity
   const selectedTotal = cartItems
     .filter(item => selectedIds.includes(item.id))
     .reduce((sum, item) => {
-      let price = Number(item.price) || 0
-      if (item.accessories && item.accessories.length > 0) {
-        price += item.accessories.reduce((a: number, acc: any) => a + Number(acc.price) || 0, 0)
+      if (item.pindan_group_id) {
+        // 拼单：price已含(娃娃+配饰)，quantity是个数
+        return sum + Number(item.price || 0) * (Number(item.quantity) || 1)
+      } else {
+        // 非拼单：price已含(娃娃+配饰)*箱子容量*箱子个数，直接用price
+        return sum + Number(item.price || 0)
       }
-      return sum + price * (Number(item.quantity) || 1)
     }, 0)
 
   const typeLabel: Record<string, string> = { doll: '', accessory: '配饰', outfit: '' }
@@ -354,11 +361,20 @@ export default function CartPage() {
                       <Text className="cart-group-tag-text">拼单</Text>
                     </View>
                     <Text className="cart-group-name">{group.groupName}</Text>
-                    <Text className="cart-group-count">共{group.totalQuantity}件</Text>
+                    {group.items[0]?.boxSize && (() => {
+                      const bs = group.items[0].boxSize
+                      const cap = bs === 'small' ? (group.items[0].smallBoxCapacity || 0) : bs === 'medium' ? (group.items[0].mediumBoxCapacity || 0) : (group.items[0].largeBoxCapacity || 0)
+                      const capLabel = bs === 'small' ? '小箱' : bs === 'medium' ? '中箱' : '大箱'
+                      return <Text className="cart-group-count">{capLabel}(约{cap}个) 共{group.totalQuantity}件</Text>
+                    })()}
                   </View>
                   {group.items.map(item => {
                     const isSelected = selectedIds.includes(item.id)
-                    const itemTotal = (Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))) * (Number(item.quantity) || 1)
+                    // 拼单：price已经是娃娃单价+配饰总价（更新配饰后price会重新计算），直接price*quantity
+                    // 不再额外加accessories，因为price已经包含了
+                    const itemTotal = item.pindan_group_id
+                      ? Number(item.price || 0) * (Number(item.quantity) || 1)
+                      : Number(item.price || 0)  // 非拼单price已含(娃娃+配饰)*箱子容量*箱数
                     return (
                       <View key={item.id} className={`cart-item ${isSelected ? 'selected' : ''}`}>
                         <View className="item-checkbox" onClick={() => toggleSelect(item.id)}>
@@ -426,7 +442,16 @@ export default function CartPage() {
                           <View className="item-quantity-row">
                             <Text className="item-quantity-label">数量</Text>
                             <View className="item-quantity-edit" onClick={() => handleEditQuantity(item)}>
-                              <Text className="item-quantity-text">{item.quantity}个</Text>
+                              {item.pindan_group_id ? (
+                                <Text className="item-quantity-text">{item.quantity}个</Text>
+                              ) : (
+                                (() => {
+                                  const bs = item.boxSize || 'small'
+                                  const cap = bs === 'small' ? (item.smallBoxCapacity || 0) : bs === 'medium' ? (item.mediumBoxCapacity || 0) : (item.largeBoxCapacity || 0)
+                                  const bsLabel = bs === 'small' ? '小箱' : bs === 'medium' ? '中箱' : '大箱'
+                                  return <Text className="item-quantity-text">{item.quantity}个 {bsLabel}(约{cap}个)</Text>
+                                })()
+                              )}
                               <Text className="edit-icon">✎</Text>
                             </View>
                           </View>
@@ -450,7 +475,10 @@ export default function CartPage() {
                   </View>
                   {groupedCartItems.normalItems.map(item => {
                     const isSelected = selectedIds.includes(item.id)
-                    const itemTotal = (Number((item.price || 0)) + Number((item.accessories || []).reduce((s: number, acc: any) => s + Number(acc.price || 0), 0))) * (Number(item.quantity) || 1)
+                    // 拼单：price已含(娃娃+配饰)，直接price*quantity
+                    const itemTotal = item.pindan_group_id
+                      ? Number(item.price || 0) * (Number(item.quantity) || 1)
+                      : Number(item.price || 0)  // 非拼单price已含(娃娃+配饰)*箱子容量*箱数
                     return (
                       <View key={item.id} className={`cart-item ${isSelected ? 'selected' : ''}`}>
                         <View className="item-checkbox" onClick={() => toggleSelect(item.id)}>
@@ -518,7 +546,16 @@ export default function CartPage() {
                           <View className="item-quantity-row">
                             <Text className="item-quantity-label">数量</Text>
                             <View className="item-quantity-edit" onClick={() => handleEditQuantity(item)}>
-                              <Text className="item-quantity-text">{item.quantity}个</Text>
+                              {item.pindan_group_id ? (
+                                <Text className="item-quantity-text">{item.quantity}个</Text>
+                              ) : (
+                                (() => {
+                                  const bs = item.boxSize || 'small'
+                                  const cap = bs === 'small' ? (item.smallBoxCapacity || 0) : bs === 'medium' ? (item.mediumBoxCapacity || 0) : (item.largeBoxCapacity || 0)
+                                  const bsLabel = bs === 'small' ? '小箱' : bs === 'medium' ? '中箱' : '大箱'
+                                  return <Text className="item-quantity-text">{item.quantity}个 {bsLabel}(约{cap}个)</Text>
+                                })()
+                              )}
                               <Text className="edit-icon">✎</Text>
                             </View>
                           </View>
@@ -656,7 +693,7 @@ export default function CartPage() {
                       <Text className="quantity-btn-text">+</Text>
                     </View>
                   </View>
-                  {editingQuantityItem && editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity && (
+                  {editingQuantityItem && editingQuantityItem.pindan_group_id && editingQuantityItem.minQuantity && editQuantity < editingQuantityItem.minQuantity && (
                     <Text className="quantity-tip">起购量{editingQuantityItem.minQuantity}个</Text>
                   )}
                 </View>
