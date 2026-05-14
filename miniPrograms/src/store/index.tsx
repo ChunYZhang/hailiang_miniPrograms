@@ -36,8 +36,10 @@ interface UserInfo {
 interface GlobalState {
   userInfo: UserInfo | null
   cartCount: number
+  companyName: string
   setUserInfo: (u: UserInfo | null) => void
   setCartCount: (n: number) => void
+  setCompanyName: (name: string) => void
   // pindan related
   isPindanMode: boolean
   pindanItems: PindanItem[]
@@ -53,8 +55,10 @@ interface GlobalState {
 const GlobalContext = createContext<GlobalState>({
   userInfo: null,
   cartCount: 0,
+  companyName: '海亮布娃娃',
   setUserInfo: () => {},
   setCartCount: () => {},
+  setCompanyName: () => {},
   isPindanMode: false,
   pindanItems: [],
   enterPindanMode: () => {},
@@ -73,6 +77,7 @@ export function useGlobalState(): GlobalState {
 export function GlobalProvider({ children }: { children: any }) {
   const [userInfo, setUserInfoState] = useState<UserInfo | null>(null)
   const [cartCount, setCartCountState] = useState(0)
+  const [companyName, setCompanyNameState] = useState('海亮布娃娃')
   const [isPindanMode, setIsPindanMode] = useState(false)
   const [pindanItems, setPindanItems] = useState<PindanItem[]>([])
 
@@ -89,6 +94,10 @@ export function GlobalProvider({ children }: { children: any }) {
     const storedCart = wx.getStorageSync('cart_count')
     if (storedCart) {
       setCartCountState(Number(storedCart))
+    }
+    const storedCompany = wx.getStorageSync('company_name')
+    if (storedCompany) {
+      setCompanyNameState(storedCompany)
     }
   }, [])
 
@@ -111,6 +120,11 @@ export function GlobalProvider({ children }: { children: any }) {
   const setCartCount = useCallback((n: number) => {
     setCartCountState(n)
     wx.setStorageSync('cart_count', String(n))
+  }, [])
+
+  const setCompanyName = useCallback((name: string) => {
+    setCompanyNameState(name)
+    wx.setStorageSync('company_name', name)
   }, [])
 
   const enterPindanMode = useCallback(() => {
@@ -179,8 +193,10 @@ export function GlobalProvider({ children }: { children: any }) {
       value={{
         userInfo,
         cartCount,
+        companyName,
         setUserInfo,
         setCartCount,
+        setCompanyName,
         isPindanMode,
         pindanItems,
         enterPindanMode,

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
-import { useDidShow } from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { api } from '../../services/api'
+import { useGlobalState } from '../../store'
 import './index.scss'
 
 interface CompanyInfo {
@@ -21,12 +22,15 @@ interface Certificate {
 }
 
 export default function CompanyPage() {
+  const { companyName } = useGlobalState()
   const [info, setInfo] = useState<CompanyInfo | null>(null)
   const [certificates, setCertificates] = useState<Certificate[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 每次页面显示时刷新数据
   useDidShow(() => {
+    if (companyName) {
+      Taro.setNavigationBarTitle({ title: companyName })
+    }
     loadData()
   })
 
@@ -65,7 +69,7 @@ export default function CompanyPage() {
       <View className="company-header">
         <View className="company-logo">🏢</View>
         <View className="company-info">
-          <Text className="company-name">{info?.name || '海亮布娃娃'}</Text>
+          <Text className="company-name">{info?.name || companyName}</Text>
           {info?.slogan && <Text className="company-slogan">{info.slogan}</Text>}
         </View>
       </View>

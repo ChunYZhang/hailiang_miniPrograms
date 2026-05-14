@@ -7,7 +7,7 @@ import { useGlobalState } from '../../store'
 import './index.scss'
 
 export default function DollListPage() {
-  const { isPindanMode, pindanItems, exitPindanMode, clearPindan, removeFromPindan, updatePindanItemQuantity } = useGlobalState()
+  const { isPindanMode, pindanItems, exitPindanMode, clearPindan, removeFromPindan, updatePindanItemQuantity, companyName } = useGlobalState()
   const [dolls, setDolls] = useState<any[]>([])
   const [seriesList, setSeriesList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -15,6 +15,12 @@ export default function DollListPage() {
   const [selectedSeries, setSelectedSeries] = useState('')
   const [showSeriesModal, setShowSeriesModal] = useState(false)
   const [showPindanPool, setShowPindanPool] = useState(false)
+
+  useDidShow(() => {
+    if (companyName) {
+      Taro.setNavigationBarTitle({ title: companyName })
+    }
+  })
 
   const loadSeries = async () => {
     try {

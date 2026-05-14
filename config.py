@@ -10,7 +10,7 @@ DB_CONFIG = {
     "host": "localhost",
     "port": 3306,
     "user": "root",
-    "password": "123123123",
+    "password": "9$kP7s@R2#tG5z&Q8b!L6",
     "database": "hailiang_doll",
     "charset": "utf8mb4"
 }

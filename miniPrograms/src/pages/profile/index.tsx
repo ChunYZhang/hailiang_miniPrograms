@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, Button } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
+import Taro from '@tarojs/taro'
 import { navigateTo, showToast } from '@tarojs/taro'
 import { api } from '../../services/api'
 import { useGlobalState } from '../../store'
 import './index.scss'
 
 export default function ProfilePage() {
-  const { userInfo, setUserInfo } = useGlobalState()
+  const { userInfo, setUserInfo, companyName } = useGlobalState()
   const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    if (companyName) {
+      Taro.setNavigationBarTitle({ title: companyName })
+    }
+  }, [companyName])
 
   useEffect(() => {
     if (userInfo) loadProfile()

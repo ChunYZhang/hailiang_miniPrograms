@@ -23,7 +23,7 @@ export default {
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#ffffff',
-    navigationBarTitleText: '海亮布娃娃',
+    navigationBarTitleText: '娃娃',
     navigationBarTextStyle: 'black',
   },
   tabBar: {

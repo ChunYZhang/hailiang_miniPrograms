@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Image, ScrollView, Swiper, SwiperItem } from '@tarojs/components'
-import { navigateTo, useDidShow } from '@tarojs/taro'
+import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
+import Taro, { navigateTo, switchTab, useDidShow } from '@tarojs/taro'
 import { api } from '../../services/api'
 import './index.scss'
 
@@ -92,6 +92,18 @@ export default function HomePage() {
           </View>
           <Text className="entry-text">娃娃</Text>
         </View>
+        <View className="entry-item" onClick={() => switchTab({ url: '/pages/company/index' })}>
+          <View className="entry-icon" style={{ background: '#e0f2fe' }}>
+            <Text style={{ fontSize: 24 }}>🏢</Text>
+          </View>
+          <Text className="entry-text">企业</Text>
+        </View>
+        <View className="entry-item" onClick={() => switchTab({ url: '/pages/cart/index' })}>
+          <View className="entry-icon" style={{ background: '#fef3c7' }}>
+            <Text style={{ fontSize: 24 }}>🛒</Text>
+          </View>
+          <Text className="entry-text">购物车</Text>
+        </View>
       </View>
 
       {/* 热门推荐 */}
@@ -104,7 +116,7 @@ export default function HomePage() {
             <Text className="text-gray-400 text-sm">暂无热门商品</Text>
           </View>
         ) : (
-          <ScrollView className="hot-scroll" scrollX>
+          <View className="hot-grid">
             {allHotItems.map((item: any) => (
               <View
                 key={`${item._type}-${item.id}`}
@@ -125,7 +137,7 @@ export default function HomePage() {
                 </View>
               </View>
             ))}
-          </ScrollView>
+          </View>
         )}
       </View>
     </View>

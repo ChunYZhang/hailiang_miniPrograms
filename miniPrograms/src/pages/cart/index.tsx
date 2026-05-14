@@ -38,6 +38,13 @@ interface CartGroup {
 }
 
 export default function CartPage() {
+  const { companyName } = useGlobalState()
+
+  useDidShow(() => {
+    if (companyName) {
+      Taro.setNavigationBarTitle({ title: companyName })
+    }
+  })
   const { userInfo, setCartCount } = useGlobalState()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)

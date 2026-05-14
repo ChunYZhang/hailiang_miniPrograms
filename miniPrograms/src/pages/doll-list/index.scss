@@ -146,6 +146,21 @@
   font-weight: 700;
 }
 
+.product-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.product-accessories-tag {
+  font-size: 10px;
+  color: #f43f5e;
+  background: #fff0f3;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
 .loading-tip,
 .empty-tip {
   padding: 60px 0;

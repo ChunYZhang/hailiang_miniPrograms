@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import { navigateBack, reLaunch, showToast } from '@tarojs/taro'
 import { api } from '../../services/api'
@@ -15,11 +15,21 @@ function getPersistentOpenid(): string {
 }
 
 export default function LoginPage() {
-  const { setUserInfo } = useGlobalState()
+  const { setUserInfo, companyName } = useGlobalState()
   const [btnLoading, setBtnLoading] = useState(false)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // 微信新版手机号授权（唯一正确写法）
   const handleWechatLogin = async (e: any) => {
+    if (!isMountedRef.current) return
+
     console.log('[LOGIN] 授权回调:', e.detail)
 
     // 新版微信只认 code，有 code 就是授权成功
@@ -46,14 +56,20 @@ export default function LoginPage() {
         wx.setStorageSync('mini_user_info', JSON.stringify(res.data))
         wx.setStorageSync('mini_token', res.data.token || res.data.id)
         showToast({ title: '登录成功', icon: 'success' })
-        setTimeout(() => reLaunch({ url: '/pages/profile/index' }), 1000)
+        if (isMountedRef.current) {
+          setTimeout(() => reLaunch({ url: '/pages/profile/index' }), 1000)
+        }
       } else {
         showToast({ title: res.msg || '登录失败', icon: 'none' })
       }
     } catch (err: any) {
+      if (!isMountedRef.current) return
       showToast({ title: err.message || '登录失败', icon: 'none' })
+      return
     } finally {
-      setBtnLoading(false)
+      if (isMountedRef.current) {
+        setBtnLoading(false)
+      }
     }
   }
 
@@ -61,7 +77,7 @@ export default function LoginPage() {
     <View className="page-login">
       <View className="login-header">
         <Text className="header-title">登录</Text>
-        <Text className="header-subtitle">欢迎来到海亮布娃娃</Text>
+        <Text className="header-subtitle">欢迎来到{companyName}</Text>
       </View>
 
       <View className="login-content">
