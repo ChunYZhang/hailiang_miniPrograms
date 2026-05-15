@@ -144,6 +144,7 @@ export const api = {
     updateStatus: (data: { id: string; status: string; adminNote?: string }) =>
       request('/api/admin/inquiry/update-status', { method: 'POST', body: data }),
     followUp: (id: string) => request<{ data: any[] }>(`/api/admin/inquiry/follow-up/${id}`),
+    delete: (id: string) => request('/api/admin/inquiry/delete', { method: 'POST', body: { id } }),
   },
 
   // ==================== 用户管理 ====================

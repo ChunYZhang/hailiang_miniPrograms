@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, FileDown, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, FileDown, Clock, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import PageHeader from '../../components/Common/PageHeader';
 import StatusBadge from '../../components/Common/StatusBadge';
 import { api } from '../../services/api';
@@ -60,10 +60,51 @@ export default function InquiriesPage() {
     }
   };
 
-  const counts = statusOptions.reduce((acc, opt) => {
-    acc[opt.value] = opt.value === 'all' ? orders.length : orders.filter(o => o.status === opt.value).length;
-    return acc;
-  }, {} as Record<string, number>);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({
+    all: 0, pending: 0, contacted: 0, quoted: 0, closed: 0, cancelled: 0
+  });
+
+  // 获取各状态的数量
+  const fetchStatusCounts = async () => {
+    try {
+      const statuses = ['pending', 'contacted', 'quoted', 'closed', 'cancelled'];
+      const counts: Record<string, number> = { all: 0 };
+      for (const status of statuses) {
+        const res = await api.inquiry.list({ status, page_size: 1 });
+        counts[status] = res.total || 0;
+      }
+      // 获取全部数量
+      const allRes = await api.inquiry.list({ page_size: 1 });
+      counts.all = allRes.total || 0;
+      setStatusCounts(counts);
+    } catch (err) {
+      console.error('获取状态数量失败', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [search, filterStatus, page]);
+
+  useEffect(() => {
+    fetchStatusCounts();
+  }, []);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await api.inquiry.delete(deleteId);
+      setDeleteId(null);
+      fetchOrders();
+      fetchStatusCounts(); // 重新获取数量
+      if (selectedOrder?.id === deleteId) {
+        setSelectedOrder(null);
+      }
+    } catch (err: any) {
+      alert(err.message || '删除失败');
+    }
+  };
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -93,7 +134,7 @@ export default function InquiriesPage() {
           >
             {opt.label}
             <span className={`px-1.5 py-0.5 rounded-full text-xs ${filterStatus === opt.value ? 'bg-white/20' : 'bg-gray-100'}`}>
-              {counts[opt.value]}
+              {statusCounts[opt.value] || 0}
             </span>
           </button>
         ))}
@@ -218,6 +259,13 @@ export default function InquiriesPage() {
                       >
                         <Clock size={14} />
                       </button>
+                      <button
+                        onClick={() => setDeleteId(order.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="删除"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -269,6 +317,35 @@ export default function InquiriesPage() {
           orderNo={selectedOrder.orderNo}
           onClose={() => { setShowFollowUp(false); setSelectedOrder(null); }}
         />
+      )}
+
+      {/* 删除确认弹窗 */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-xl">
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trash2 size={24} className="text-red-500" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-800 mb-1">确认删除</h3>
+              <p className="text-sm text-gray-500">确定要删除这条询价单吗？删除后无法恢复。</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="flex-1 px-4 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

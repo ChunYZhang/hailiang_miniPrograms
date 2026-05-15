@@ -41,5 +41,8 @@ nimiKey.txt
 logs/
 *.log
 
+# Local Claude Code files
+.claude/
+
 # Misc
 Thumbs.db

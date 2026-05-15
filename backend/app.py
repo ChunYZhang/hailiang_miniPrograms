@@ -1035,6 +1035,27 @@ def admin_get_follow_up_records(inquiry_id):
         db.close()
 
 
+@app.route('/api/admin/inquiry/delete', methods=['POST'])
+@admin_login_required
+def admin_delete_inquiry():
+    """删除询价单"""
+    data = request.get_json() or {}
+    inquiry_id = data.get('id')
+
+    if not inquiry_id:
+        return jsonify({"code": 400, "msg": "缺少询价单ID"})
+
+    db = get_db()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM inquiry_order WHERE id = %s", (inquiry_id,))
+            cursor.execute("DELETE FROM follow_up_record WHERE inquiry_id = %s", (inquiry_id,))
+            db.commit()
+            return jsonify({"code": 200, "msg": "删除成功"})
+    finally:
+        db.close()
+
+
 # ==================== 用户管理 ====================
 
 @app.route('/api/admin/user/list', methods=['GET'])

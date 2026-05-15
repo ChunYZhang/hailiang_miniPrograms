@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff } from 'lucide-react';
 import PageHeader from '../../components/Common/PageHeader';
 import StatusBadge from '../../components/Common/StatusBadge';
 import { api } from '../../services/api';
 import type { Admin } from '../../types';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'email' | 'sms' | 'admins' | 'password'>('email');
+  const [activeTab, setActiveTab] = useState<'email' | 'sms' | 'admins'>('email');
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState<string | null>(null);
@@ -17,12 +17,6 @@ export default function SettingsPage() {
     phone: '',
     provider: 'aliyun',
     note: '短信功能预留配置，暂不实际发送',
-  });
-
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
   });
 
   const fetchData = async () => {
@@ -60,25 +54,6 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(null), 2000);
   };
 
-  const handleChangePassword = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('新密码与确认密码不一致');
-      return;
-    }
-    if (passwordForm.newPassword.length < 8) {
-      alert('新密码至少8位');
-      return;
-    }
-    try {
-      await api.admin.changePassword(passwordForm.oldPassword, passwordForm.newPassword);
-      setSaved('password');
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setSaved(null), 2000);
-    } catch (err: any) {
-      alert(err.message || '修改失败');
-    }
-  };
-
   const toggleAdminStatus = async (id: string) => {
     try {
       await api.admin.toggleStatus(id);
@@ -106,7 +81,6 @@ export default function SettingsPage() {
           { id: 'email', label: '邮件配置' },
           { id: 'sms', label: '短信配置' },
           { id: 'admins', label: '管理员账号' },
-          { id: 'password', label: '修改密码' },
         ].map(tab => (
           <button
             key={tab.id}
@@ -310,52 +284,6 @@ export default function SettingsPage() {
             {admins.length === 0 && (
               <div className="text-center py-12 text-gray-400"><p className="text-sm">暂无管理员</p></div>
             )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'password' && (
-        <div className="max-w-md">
-          <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-semibold text-gray-800 border-b border-gray-100 pb-3">修改登录密码</h3>
-            <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">当前密码</label>
-              <input
-                type="password"
-                value={passwordForm.oldPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                placeholder="请输入当前密码"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">新密码</label>
-              <input
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                placeholder="请输入新密码（至少8位）"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">确认新密码</label>
-              <input
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                placeholder="请再次输入新密码"
-              />
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={handleChangePassword}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved === 'password' ? 'bg-green-500 text-white' : 'bg-rose-500 hover:bg-rose-600 text-white'}`}
-              >
-                <Save size={14} /> {saved === 'password' ? '修改成功' : '确认修改'}
-              </button>
-            </div>
           </div>
         </div>
       )}

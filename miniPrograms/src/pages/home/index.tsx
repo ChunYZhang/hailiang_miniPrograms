@@ -86,7 +86,7 @@ export default function HomePage() {
 
       {/* 快捷入口 */}
       <View className="quick-entry">
-        <View className="entry-item" onClick={() => navigateTo({ url: '/pages/doll-list/index' })}>
+        <View className="entry-item" onClick={() => switchTab({ url: '/pages/doll-list/index' })}>
           <View className="entry-icon" style={{ background: '#fce7f3' }}>
             <Text style={{ fontSize: 24 }}>🧸</Text>
           </View>

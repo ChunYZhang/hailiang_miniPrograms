@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff, Lock, User } from 'lucide-react';
 import { api } from '../../services/api';
@@ -9,6 +9,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+
+  useEffect(() => {
+    // 获取公司名称用于登录页显示
+    api.company.get().then(res => {
+      setCompanyName(res.data?.name || '公司名称');
+    }).catch(() => {
+      setCompanyName('公司名称');
+    });
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +48,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-500/30">
             <Heart size={28} className="text-white" fill="white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">星愿布娃娃工厂</h1>
+          <h1 className="text-2xl font-bold text-white">{companyName || '公司名称'}</h1>
           <p className="text-slate-400 text-sm mt-1">询价管理后台</p>
         </div>
 
@@ -109,7 +119,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-slate-500 mt-6">
-          © 2024 星愿布娃娃工厂 · 询价管理系统
+          © 2024 {companyName || '公司名称'} · 管理系统
         </p>
       </div>
     </div>

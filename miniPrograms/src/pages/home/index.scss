@@ -91,11 +91,11 @@
 .hot-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: space-between;
 }
 
 .hot-card {
-  width: calc(50% - 4px);
+  width: calc((100% - 8px) / 2);
   background: #f9fafb;
   border-radius: 10px;
   overflow: hidden;
@@ -104,7 +104,7 @@
 
 .hot-cover {
   width: 100%;
-  height: calc((100vw - 32px) / 2);
+  aspect-ratio: 1 / 1;
   display: block;
 }
 

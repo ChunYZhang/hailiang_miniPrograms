@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { CompanyProvider } from './contexts/CompanyContext';
 import Layout from './components/Layout/Layout';
 import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -22,8 +23,9 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <CompanyProvider>
+      <BrowserRouter>
+        <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={
           <PrivateRoute>
@@ -43,7 +45,8 @@ export default function App() {
           <Route path="series-category" element={<SeriesCategoryPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </CompanyProvider>
   );
 }

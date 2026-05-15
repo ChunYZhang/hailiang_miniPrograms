@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Save, Plus, Trash2, Upload, Globe, Phone, MapPin, Clock, X, Check, Search, Edit } from 'lucide-react';
 import PageHeader from '../../components/Common/PageHeader';
 import { api } from '../../services/api';
+import { useCompany } from '../../contexts/CompanyContext';
 import type { CompanyInfo, Banner, Doll, Accessory, OutfitTemplate } from '../../types';
 
 export default function CompanyPage() {
+  const { refresh } = useCompany();
   const [activeTab, setActiveTab] = useState<'info' | 'banners' | 'certs'>('info');
   const [info, setInfo] = useState<CompanyInfo | null>(null);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -45,6 +47,7 @@ export default function CompanyPage() {
       await api.company.save(info);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      refresh(); // 刷新全局公司信息上下文
     } catch (err: any) {
       alert(err.message || '保存失败');
     }

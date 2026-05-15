@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Warehouse,
-  Building2, Settings, BarChart3, ChevronLeft, ChevronRight, LogOut,
+  Building2, Settings, BarChart3, ChevronLeft, ChevronRight,
   Heart, Tag
 } from 'lucide-react';
+import { useCompany } from '../../contexts/CompanyContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -24,6 +25,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { companyInfo } = useCompany();
   return (
     <aside
       className={`fixed left-0 top-0 h-full bg-slate-900 text-white flex flex-col transition-all duration-300 z-50 ${
@@ -37,8 +39,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <Heart size={16} className="text-white" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white leading-tight truncate">布娃娃工厂</p>
-              <p className="text-xs text-slate-400 truncate">询价管理系统</p>
+              <p className="text-sm font-bold text-white leading-tight truncate">{companyInfo.name || '公司名称'}</p>
+              <p className="text-xs text-slate-400 truncate">{companyInfo.slogan || '管理系统'}</p>
             </div>
           </div>
         )}
@@ -69,13 +71,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       <div className="px-2 pb-4 border-t border-slate-700 pt-4">
-        <button
-          onClick={() => {}}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-slate-400 hover:bg-slate-800 hover:text-white transition-all mb-2"
-        >
-          <LogOut size={18} className="flex-shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">退出登录</span>}
-        </button>
         <button
           onClick={onToggle}
           className="flex items-center justify-center w-full py-2 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-all"
